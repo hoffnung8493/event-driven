@@ -1,9 +1,11 @@
 {
   "name": "event-driven",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "This is a library that makes building event-driven-architecture easy",
   "main": "build/index.js",
   "types": "build/index.d.ts",
+  "repository": "github:hoffnung8493/event-driven",
+  "homepage": "https://github.com/hoffnung8493/event-driven#readme",
   "scripts": {
     "build": "NODE_OPTIONS=\"--max-old-space-size=2048\" && tsc"
   },
