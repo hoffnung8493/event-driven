@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
@@ -8,11 +8,17 @@ import TableRow from '@mui/material/TableRow'
 import Paper from '@mui/material/Paper'
 import useQuery from '../../../hooks/useQuery'
 import { Box, CircularProgress, Toolbar, Typography } from '@mui/material'
-import { MessageErrorDoc } from '../../../../../src/backend/models'
+import { EventErrorDoc } from '../../../../../src/backend/models'
 import ErrorRow from './ErrorRow'
+import moment from 'moment'
 
 const ErrorTable: React.FC<{ subject: string }> = ({ subject }) => {
-  const { data, loading } = useQuery<MessageErrorDoc[]>('get', `/info/subjects/${subject}/errors`)
+  const [sDate] = useState(moment().subtract(7, 'days').toISOString())
+  const [eDate] = useState(new Date().toISOString())
+  const { data, loading } = useQuery<{ errors: EventErrorDoc[]; count: number }>(
+    'get',
+    `/subjects/${subject}/errors?sDate=${sDate}&eDate=${eDate}`
+  )
   if (loading || !data)
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 600 }}>
@@ -43,8 +49,8 @@ const ErrorTable: React.FC<{ subject: string }> = ({ subject }) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {data.map((err) => (
-              <ErrorRow msgError={err} key={err._id.toString()} />
+            {data.errors.map((err) => (
+              <ErrorRow eventError={err} key={err._id.toString()} />
             ))}
           </TableBody>
         </Table>

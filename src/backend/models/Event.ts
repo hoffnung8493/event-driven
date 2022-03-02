@@ -1,7 +1,6 @@
-import { Schema, Document, Types, connection } from 'mongoose'
-import { database } from './database'
+import { Schema, Document, Types, model } from 'mongoose'
 
-export interface MessageDoc extends Document {
+export interface EventDoc extends Document {
   operationId: Types.ObjectId
   parentId: Types.ObjectId
   clientGroup: string
@@ -15,7 +14,7 @@ export interface MessageDoc extends Document {
   }[]
 }
 
-const MessageSchema = new Schema(
+const EventSchema = new Schema(
   {
     operationId: { type: Types.ObjectId, required: true },
     parentId: { type: Types.ObjectId, required: true },
@@ -34,14 +33,14 @@ const MessageSchema = new Schema(
   { timestamps: true }
 )
 
-export const Message = connection.useDb(database).model<MessageDoc>('message', MessageSchema)
+export const Event = model<EventDoc>('Event', EventSchema)
 
-export interface Message<Subjects> {
+export interface Event<Subjects> {
   subject: Subjects
   data: any
 }
 
-export const createMessage = async <ClientGroups extends string, Subjects extends string, T extends Message<Subjects>>(data: {
+export const createEvent = async <ClientGroups extends string, Subjects extends string, T extends Event<Subjects>>(data: {
   _id: Types.ObjectId
   operationId: Types.ObjectId
   parentId: Types.ObjectId
@@ -54,4 +53,4 @@ export const createMessage = async <ClientGroups extends string, Subjects extend
     targetClientGroup: ClientGroups
     createdAt: Date
   }[]
-}) => new Message(data).save()
+}) => new Event(data).save()

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
@@ -8,11 +8,17 @@ import TableRow from '@mui/material/TableRow'
 import Paper from '@mui/material/Paper'
 import useQuery from '../../../hooks/useQuery'
 import { Box, CircularProgress, Toolbar, Typography } from '@mui/material'
-import { MessageDoc } from '../../../../../src/backend/models'
+import { EventDoc } from '../../../../../src/backend/models'
 import EventRow from './EventRow'
+import moment from 'moment'
 
 const EventTable: React.FC<{ subject: string }> = ({ subject }) => {
-  const { data, loading } = useQuery<MessageDoc[]>('get', `/info/subjects/${subject}`)
+  const [sDate] = useState(moment().subtract(7, 'days').toISOString())
+  const [eDate] = useState(new Date().toISOString())
+  const { data, loading } = useQuery<{ events: EventDoc[]; count: number }>(
+    'get',
+    `/subjects/${subject}?sDate=${sDate}&eDate=${eDate}`
+  )
 
   if (loading || !data)
     return (
@@ -44,7 +50,7 @@ const EventTable: React.FC<{ subject: string }> = ({ subject }) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {data.map((event) => (
+            {data.events.map((event) => (
               <EventRow event={event} key={event._id} />
             ))}
           </TableBody>

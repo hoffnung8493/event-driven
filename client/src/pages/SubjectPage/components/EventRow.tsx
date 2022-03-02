@@ -1,10 +1,10 @@
 import React from 'react'
 import { TableRow, TableCell } from '@mui/material'
 import moment from 'moment'
-import { MessageDoc } from '../../../../../src/backend/models'
+import { EventDoc } from '../../../../../src/backend/models'
 import { useNavigate } from 'react-router-dom'
 
-const EventRow: React.FC<{ event: MessageDoc }> = ({ event }) => {
+const EventRow: React.FC<{ event: EventDoc }> = ({ event }) => {
   const navigate = useNavigate()
   return (
     <>

@@ -5,13 +5,13 @@ import TableContainer from '@mui/material/TableContainer'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
 import Paper from '@mui/material/Paper'
-import useQuery from '../hooks/useQuery'
+import useQuery from '../../../hooks/useQuery'
 import { Box, CircularProgress } from '@mui/material'
-import { SubjectSummaryDoc } from '../../../src/backend/models'
+import { EventSummaryDoc } from '../../../../../src/backend/models'
 import { useNavigate } from 'react-router-dom'
 
 export default function SubjectsTable() {
-  const { data, loading } = useQuery<SubjectSummaryDoc[]>('get', '/info/subjects')
+  const { data, loading } = useQuery<EventSummaryDoc[]>('get', '/subjects')
   const navigate = useNavigate()
   if (loading || !data)
     return (
@@ -40,7 +40,7 @@ export default function SubjectsTable() {
               <TableCell component="th" scope="row">
                 {row.subject}
               </TableCell>
-              <TableCell align="right">{row.messageCount}</TableCell>
+              <TableCell align="right">{row.count}</TableCell>
               <TableCell align="right">{row.unresolvedErrorCount}</TableCell>
             </TableRow>
           ))}

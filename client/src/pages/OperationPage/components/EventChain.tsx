@@ -1,11 +1,16 @@
 import React, { useMemo, useContext } from 'react'
 import { Paper, Toolbar, Typography, Box } from '@mui/material'
 import moment from 'moment'
-import { OperationDoc, MessageDoc, MessageErrorDoc } from '../../../../../src/backend/models'
+import { OperationDoc, EventDoc, EventErrorDoc, OperationErrorDoc } from '../../../../../src/backend/models'
 import Tree from 'react-d3-tree'
 import { MessageDataContext } from '../context/MessageData'
 
-const EventChain: React.FC<{ operation: OperationDoc; messages: MessageDoc[]; messageErrors: MessageErrorDoc[] }> = (data) => {
+const EventChain: React.FC<{
+  operation: OperationDoc
+  operationError?: OperationErrorDoc
+  events: EventDoc[]
+  eventErrors: EventErrorDoc[]
+}> = (data) => {
   const { setMessageData } = useContext(MessageDataContext)
   const eventTree = useMemo(() => {
     interface TreeNode {
@@ -16,7 +21,7 @@ const EventChain: React.FC<{ operation: OperationDoc; messages: MessageDoc[]; me
 
     const formatDate = (date: Date) => moment(date).format('MM/DD HH:mm:ss')
 
-    const getChildren = (parentId: string, events: MessageDoc[], errors: MessageErrorDoc[]): TreeNode[] => [
+    const getChildren = (parentId: string, events: EventDoc[], errors: EventErrorDoc[]): TreeNode[] => [
       ...events
         .filter((m) => m.parentId.toString() === parentId)
         .map((m) => ({
@@ -46,13 +51,13 @@ const EventChain: React.FC<{ operation: OperationDoc; messages: MessageDoc[]; me
     ]
 
     return {
-      name: data.operation.operationName ?? '_NO_OPERATION_NAME',
+      name: data.operation.name ?? '_NO_OPERATION_NAME',
       attributes: {
         id: data.operation._id,
         ...data.operation.variables,
         createdAt: formatDate(data.operation.createdAt),
       },
-      children: getChildren(data.operation._id, data.messages, data.messageErrors),
+      children: getChildren(data.operation._id, data.events, data.eventErrors),
     }
   }, [data])
   return (
@@ -79,9 +84,9 @@ const EventChain: React.FC<{ operation: OperationDoc; messages: MessageDoc[]; me
           leafNodeClassName="node__leaf"
           collapsible={false}
           onNodeClick={(node) => {
-            const event = data?.messages.find((v) => v._id === node.data.attributes?.id)
+            const event = data?.events.find((v) => v._id === node.data.attributes?.id)
             if (event) return setMessageData(event)
-            const msgError = data?.messageErrors.find((v) => v._id.toString() === node.data.attributes?.id)
+            const msgError = data?.eventErrors.find((v) => v._id.toString() === node.data.attributes?.id)
             if (msgError) return setMessageData(msgError)
             setMessageData(data?.operation)
           }}

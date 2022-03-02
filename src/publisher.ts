@@ -1,6 +1,6 @@
 import { RedisClientType } from 'redis'
 import { Types } from 'mongoose'
-import { createMessage, Message, MessageError, SubjectSummary } from '../backend/models'
+import { createEvent, Event, EventError, EventSummary } from './backend/models'
 
 export interface PublisherInput<ClientGroups extends string> {
   client: RedisClientType<any, any>
@@ -9,7 +9,7 @@ export interface PublisherInput<ClientGroups extends string> {
   operationId: Types.ObjectId
 }
 
-export const Publisher = <Subjects extends string, ClientGroups extends string, T extends Message<Subjects>>({
+export const Publisher = <Subjects extends string, ClientGroups extends string, T extends Event<Subjects>>({
   client,
   clientGroup,
   operationId,
@@ -27,6 +27,7 @@ export const Publisher = <Subjects extends string, ClientGroups extends string, 
     new Promise(async (resolve, reject) => {
       try {
         const eventId = new Types.ObjectId()
+
         await client.sendCommand([
           'XADD',
           subject,
@@ -39,8 +40,8 @@ export const Publisher = <Subjects extends string, ClientGroups extends string, 
           JSON.stringify(data),
         ])
         //@ts-ignore
-        console.log(`Event!${process.env.PORT} - [${subject}]`)
-        const msg = await createMessage<ClientGroups, Subjects, T>({
+        console.log(`Event! - [${subject}]`)
+        const event = await createEvent<ClientGroups, Subjects, T>({
           _id: eventId,
           operationId,
           parentId,
@@ -51,8 +52,8 @@ export const Publisher = <Subjects extends string, ClientGroups extends string, 
           publishedAt: new Date(),
           republish: [],
         })
-        MessageError.updateOne({ operationId, parentId, clientGroup }, { 'resolvedBy.messageId': msg._id }).exec()
-        SubjectSummary.updateOne({ subject }, { $inc: { messageCount: 1 } }).exec()
+        EventError.updateOne({ operationId, parentId, clientGroup }, { 'resolvedBy.messageId': event._id }).exec()
+        EventSummary.updateOne({ subject }, { $inc: { count: 1 } }).exec()
         resolve({ eventId })
       } catch (err) {
         console.error(err)

@@ -1,7 +1,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { theme } from './theme'
 import { ThemeProvider } from '@emotion/react'
-import MainPage from './pages/MainPage'
+import SubjectListPage from './pages/SubjectListPage'
 import RegisterPage from './pages/RegisterPage'
 import SigninPage from './pages/SigninPage'
 import SubjectPage from './pages/SubjectPage'
@@ -14,7 +14,7 @@ function App() {
       <BackendConnectionProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<MainPage />} />
+            <Route path="/" element={<SubjectListPage />} />
             <Route path="/subjects/:subject" element={<SubjectPage />} />
             <Route path="/operations/:operationId" element={<OperationPage />} />
             <Route path="/auth/register" element={<RegisterPage />} />

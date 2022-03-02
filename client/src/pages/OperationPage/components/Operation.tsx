@@ -6,7 +6,7 @@ import moment from 'moment'
 
 const formatDate = (date: Date) => moment(date).format('YY/MM/DD HH:mm:ss')
 
-const GraphqlOperation: React.FC<OperationDoc> = (operation) => {
+const Operation: React.FC<OperationDoc> = (operation) => {
   return (
     <Paper variant="outlined">
       <Toolbar
@@ -16,7 +16,7 @@ const GraphqlOperation: React.FC<OperationDoc> = (operation) => {
         }}
       >
         <Typography sx={{ flex: '1 1 100%' }} variant="h6" id="tableTitle" component="div">
-          Mutation | {operation.operationName}
+          Mutation | {operation.name}
         </Typography>
       </Toolbar>
       <TableContainer>
@@ -28,7 +28,7 @@ const GraphqlOperation: React.FC<OperationDoc> = (operation) => {
             </TableRow>
             <TableRow>
               <TableCell>Name</TableCell>
-              <TableCell>{operation.operationName}</TableCell>
+              <TableCell>{operation.name}</TableCell>
             </TableRow>
             <TableRow>
               <TableCell>userId</TableCell>
@@ -57,4 +57,4 @@ const GraphqlOperation: React.FC<OperationDoc> = (operation) => {
   )
 }
 
-export default GraphqlOperation
+export default Operation

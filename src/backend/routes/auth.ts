@@ -1,5 +1,5 @@
 import express from 'express'
-import { Admin, createAdmin, AdminDoc } from '../models'
+import { User, createUser, UserDoc } from '../models'
 import { hash, compare } from 'bcryptjs'
 import { sign } from 'jsonwebtoken'
 
@@ -11,12 +11,12 @@ export const authRouter = () => {
       const { username, password } = req.body
       if (username.trim().length < 3) throw new Error('Username must be at least 3 characters long')
       if (password.length < 8) throw new Error('Password must be at least 7 characters long')
-      const admin = await Admin.findOne({ username: req.body.username })
-      if (admin) throw new Error('This username is already used')
+      const user = await User.findOne({ username: req.body.username })
+      if (user) throw new Error('This username is already used')
       const hashedPassword = await hash(req.body.password, 10)
-      const newAdmin = await createAdmin({ username, hashedPassword })
-      const accessToken = createAccessToken(newAdmin)
-      return res.send({ id: newAdmin.id, username, accessToken })
+      const newUser = await createUser({ username, hashedPassword })
+      const accessToken = createAccessToken(newUser)
+      return res.send({ id: newUser.id, username, accessToken })
     } catch (err) {
       if (err instanceof Error) res.status(500).json(err.message)
       else res.status(500).json('something went wrong')
@@ -28,11 +28,11 @@ export const authRouter = () => {
       const { username, password } = req.body
       if (username.trim().length < 3) throw new Error('Username must be at least 3 characters long')
       if (password.length < 8) throw new Error('Password must be at least 7 characters long')
-      const admin = await Admin.findOne({ username: req.body.username })
-      if (!admin) throw new Error('This admin does not exist.')
-      if (!(await compare(password, admin.hashedPassword))) throw new Error('Password/username is incorrect')
-      const accessToken = createAccessToken(admin)
-      return res.send({ id: admin.id, username, accessToken })
+      const user = await User.findOne({ username: req.body.username })
+      if (!user) throw new Error('This user does not exist.')
+      if (!(await compare(password, user.hashedPassword))) throw new Error('Password/username is incorrect')
+      const accessToken = createAccessToken(user)
+      return res.send({ id: user.id, username, accessToken })
     } catch (err) {
       if (err instanceof Error) res.status(500).json(err.message)
       else res.status(500).json('something went wrong')
@@ -42,7 +42,7 @@ export const authRouter = () => {
   return router
 }
 
-const createAccessToken = (admin: AdminDoc) => {
+const createAccessToken = (admin: UserDoc) => {
   const tokenBody = { admin: { id: admin.id, authorized: admin.authorized } }
   const accessToken = sign(tokenBody, process.env.ACCESS_TOKEN_SECRET!, { expiresIn: '12h' })
   return accessToken

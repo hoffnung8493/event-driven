@@ -3,8 +3,8 @@ import path from 'path'
 import { verify } from 'jsonwebtoken'
 import { errorRouter } from './routes/error'
 import { RedisClientType } from 'redis'
-import { infoRouter } from './routes/info'
-import { messageRouter } from './routes/message'
+import { subjectRouter } from './routes/subject'
+import { operationRouter } from './routes/operation'
 import { authRouter } from './routes/auth'
 export * from './models'
 
@@ -30,7 +30,7 @@ export const applyMiddleware = (app: express.Express, ACCESS_TOKEN_SECRET: strin
   app.use(authenticateAdmin(ACCESS_TOKEN_SECRET))
   app.use(express.static(path.resolve(__dirname, '../../client/build')))
   app.use('/event-api/errors', errorRouter(redis))
-  app.use('/event-api/info', infoRouter(redis))
+  app.use('/event-api/subjects', subjectRouter(redis))
   app.use('/event-api/auth', authRouter())
-  app.use('/event-api/messages', messageRouter(redis))
+  app.use('/event-api/operations', operationRouter())
 }

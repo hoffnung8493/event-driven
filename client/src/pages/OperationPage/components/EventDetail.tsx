@@ -1,10 +1,10 @@
 import { Table, TableContainer, Paper, TableBody, TableRow, TableCell, Typography, Toolbar } from '@mui/material'
 import React from 'react'
-import { MessageDoc } from '../../../../../src/backend/models'
+import { EventDoc } from '../../../../../src/backend/models'
 import ReactJson from 'react-json-view'
 import moment from 'moment'
 
-const EventDetail: React.FC<MessageDoc> = (message) => {
+const EventDetail: React.FC<EventDoc> = (message) => {
   const formatDate = (date: Date) => moment(date).format('YY/MM/DD HH:mm:ss')
   return (
     <Paper variant="outlined">

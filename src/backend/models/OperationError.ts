@@ -1,6 +1,5 @@
-import { Schema, Document, Types, connection, model } from 'mongoose'
+import { Schema, Document, Types, model } from 'mongoose'
 import { OperationDoc, OperationSummaryDoc } from '.'
-import { database } from './database'
 
 export interface OperationErrorDoc extends Document {
   operationId: Types.ObjectId
@@ -14,14 +13,12 @@ const OperationErrorSchema = new Schema({
   errStack: String,
 })
 
-export const OperationError = connection.useDb(database).model<OperationErrorDoc>('OperationError', OperationErrorSchema)
+export const OperationError = model<OperationErrorDoc>('OperationError', OperationErrorSchema)
 
 export const operationErrorCreate = async ({ operationId, error }: { operationId: Types.ObjectId; error: any }) => {
   new OperationError({ operationId, errMessage: error.message, errStack: error.stack }).save()
   const operation = await model<OperationDoc>('operation').findById(operationId)
-  model<OperationSummaryDoc>('operationsummary').findOneAndUpdate(
-    { operation: operation!.operationName },
-    { $inc: { messageCount: 0, unresolvedErrorCount: 1 } },
-    { upsert: true }
-  )
+  model<OperationSummaryDoc>('operationsummary')
+    .findOneAndUpdate({ operation: operation!.name }, { $inc: { count: 0, unresolvedErrorCount: 1 } }, { upsert: true })
+    .exec()
 }

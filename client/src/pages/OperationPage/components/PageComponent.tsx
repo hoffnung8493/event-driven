@@ -2,7 +2,7 @@ import React, { useContext } from 'react'
 import { Container, Box, Grid, CircularProgress } from '@mui/material'
 import Header from '../../../components/Header'
 import EventChain from './EventChain'
-import GraphqlOperation from './GraphqlOperation'
+import Operation from './Operation'
 import ErrorDetail from './ErrorDetail'
 import EventDetail from './EventDetail'
 import { MessageDataContext } from '../context/MessageData'
@@ -26,7 +26,7 @@ const PageComponent: React.FC = () => {
           <Grid item xs={6}>
             {messageData &&
               (messageData.query ? (
-                <GraphqlOperation {...messageData} />
+                <Operation {...messageData} />
               ) : messageData.error ? (
                 <ErrorDetail {...messageData} />
               ) : (

@@ -1,7 +1,6 @@
-import { connection, Schema, Document, Types } from 'mongoose'
-import { database } from './database'
+import { Schema, Document, Types, model } from 'mongoose'
 
-export interface MessageErrorDoc extends Document {
+export interface EventErrorDoc extends Document {
   _id: Types.ObjectId
   operationId: Types.ObjectId
   parentId: Types.ObjectId
@@ -20,7 +19,7 @@ export interface MessageErrorDoc extends Document {
   updatedAt: Date
 }
 
-const MessageErrorSchema = new Schema(
+const EventErrorSchema = new Schema(
   {
     operationId: { type: Types.ObjectId, required: true },
     parentId: { type: Types.ObjectId, required: true },
@@ -41,9 +40,9 @@ const MessageErrorSchema = new Schema(
   { timestamps: true }
 )
 
-export const MessageError = connection.useDb(database).model<MessageErrorDoc>('MessageError', MessageErrorSchema)
+export const EventError = model<EventErrorDoc>('EventError', EventErrorSchema)
 
-export const createMessageError = async <Subjects extends string>(data: {
+export const createEventError = async <Subjects extends string>(data: {
   operationId: Types.ObjectId
   parentId: Types.ObjectId
   clientGroup: string
@@ -53,7 +52,7 @@ export const createMessageError = async <Subjects extends string>(data: {
     stack?: string
   }
 }) => {
-  const messageError = await MessageError.findOneAndUpdate(
+  const eventError = await EventError.findOneAndUpdate(
     {
       operationId: data.operationId,
       parentId: data.parentId,
@@ -65,10 +64,10 @@ export const createMessageError = async <Subjects extends string>(data: {
       $inc: { errorCount: 1 },
     },
     { new: true }
-  )
-  if (messageError) return messageError.toObject()
+  ).exec()
+  if (eventError) return eventError.toObject()
 
-  const newMessageError = await new MessageError({
+  const newEventError = await new EventError({
     operationId: data.operationId,
     parentId: data.parentId,
     clientGroup: data.clientGroup,
@@ -77,5 +76,5 @@ export const createMessageError = async <Subjects extends string>(data: {
     error: [{ ...data.error, createdAt: new Date() }],
   }).save()
 
-  return newMessageError
+  return newEventError
 }

@@ -1,7 +1,7 @@
-import { createMessageError, Message, SubjectSummary } from '../backend/models'
+import { createEventError, Event, EventSummary } from './backend/models'
 import { Types } from 'mongoose'
 import { RedisClientType } from 'redis'
-import { getValue } from '../redisParser'
+import { getValue } from './redisParser'
 
 // This is used to prevent duplicate messages from being processed, when retries occur
 // processingMessage string format: `${parentId}-${clientGroup}`
@@ -14,7 +14,7 @@ export const Subscriber = async <ClientGroups extends string, Subjects extends s
 ) => {
   const redis = redisOriginal.duplicate()
   await redis.connect()
-  return async <T1 extends Message<Subjects>>({
+  return async <T1 extends Event<Subjects>>({
     subject,
     publishingSubject,
     eventHandler,
@@ -73,9 +73,9 @@ const configureMessageProcessingFunctions = async <ClientGroups extends string, 
     const result = (await redis.sendCommand([
       'XREADGROUP',
       'BLOCK',
-      '0',
-      // 'COUNT',
-      // '10',
+      '500',
+      'COUNT',
+      '5',
       'GROUP',
       clientGroup,
       consumerName,
@@ -112,7 +112,7 @@ const configureMessageProcessingFunctions = async <ClientGroups extends string, 
   }
 }
 
-const processMessage = async <Subjects extends string, ClientGroups extends string, T1 extends Message<Subjects>>(
+const processMessage = async <Subjects extends string, ClientGroups extends string, T1 extends Event<Subjects>>(
   messages: any,
   redis: RedisClientType<any, any>,
   subject: T1['subject'],
@@ -145,7 +145,7 @@ const processMessage = async <Subjects extends string, ClientGroups extends stri
         await ack()
       } catch (error) {
         let { message, stack } = error as Error
-        const messageError = await createMessageError<Subjects>({
+        const messageError = await createEventError<Subjects>({
           publishingSubject,
           operationId,
           parentId,
@@ -157,8 +157,7 @@ const processMessage = async <Subjects extends string, ClientGroups extends stri
         })
 
         const { errorCount } = messageError
-        if (errorCount === 1)
-          SubjectSummary.updateOne({ subject: publishingSubject }, { $inc: { unresolvedErrorCount: 1 } }).exec()
+        if (errorCount === 1) EventSummary.updateOne({ subject: publishingSubject }, { $inc: { unresolvedErrorCount: 1 } }).exec()
         console.error(`Failed ${errorCount} times, clientGroup: ${clientGroup}, errMsg: ${message} eventId:${parentId}`)
         if (errorCount > 4) {
           console.log(`Error added to dead letter queue`)

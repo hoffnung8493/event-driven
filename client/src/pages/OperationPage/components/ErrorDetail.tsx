@@ -12,12 +12,12 @@ import {
   Alert,
 } from '@mui/material'
 import React, { useEffect, useState } from 'react'
-import { MessageErrorDoc } from '../../../../../src/backend/models'
+import { EventErrorDoc } from '../../../../../src/backend/models'
 import moment from 'moment'
 import ErrorTable from './ErrorTable'
 import useMutation from '../../../hooks/useMutation'
 
-const ErrorDetail: React.FC<MessageErrorDoc> = (msgError) => {
+const ErrorDetail: React.FC<EventErrorDoc> = (msgError) => {
   const formatDate = (date: Date) => moment(date).format('YY/MM/DD HH:mm:ss')
   const { loading, error, mutate } = useMutation('put', `/errors/${msgError._id}/retry`)
   const [open, setOpen] = useState(false)
