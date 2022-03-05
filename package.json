@@ -1,7 +1,7 @@
 {
   "name": "event-driven",
-  "version": "1.0.12",
-  "description": "This is a library that makes building event-driven-architecture easy",
+  "version": "1.0.13",
+  "description": "makes building event-driven-architecture easy",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "repository": "github:hoffnung8493/event-driven",

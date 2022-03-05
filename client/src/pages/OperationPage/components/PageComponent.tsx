@@ -17,7 +17,7 @@ const PageComponent: React.FC = () => {
     )
   return (
     <Container component="main" style={{ maxWidth: '100%' }}>
-      <Header title={`Operation - ${operationId}`} />
+      <Header title={`Operation(Command) - ${operationId}`} />
       <Box sx={{ flexGrow: 1, p: 3 }}>
         <Grid container sx={{ height: '100%' }} spacing={4}>
           <Grid item xs={6}>

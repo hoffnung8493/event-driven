@@ -25,7 +25,7 @@ const EventChain: React.FC<{
       ...events
         .filter((m) => m.parentId.toString() === parentId)
         .map((m) => ({
-          name: m.subject,
+          name: `[EVENT]${m.subject}`,
           attributes: {
             id: m._id,
             clientGroup: m.clientGroup,
@@ -51,7 +51,7 @@ const EventChain: React.FC<{
     ]
 
     return {
-      name: data.operation.name ?? '_NO_OPERATION_NAME',
+      name: `[COMMAND]${data.operation.name ?? '_NO_OPERATION_NAME'}`,
       attributes: {
         id: data.operation._id,
         ...data.operation.variables,
