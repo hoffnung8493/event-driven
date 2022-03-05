@@ -13,7 +13,7 @@ export interface EventErrorDoc extends Document {
     createdAt: Date
   }[]
   resolvedBy: {
-    messageId?: Types.ObjectId
+    eventId?: Types.ObjectId
   }
   createdAt: Date
   updatedAt: Date
@@ -34,7 +34,7 @@ const EventErrorSchema = new Schema(
       },
     ],
     resolvedBy: {
-      messageId: Types.ObjectId,
+      eventId: Types.ObjectId,
     },
   },
   { timestamps: true }

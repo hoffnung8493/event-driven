@@ -33,7 +33,7 @@ export const MessageDataProvider = ({ children, operationId }: { children: React
       const errorId = searchParams.get('error-id')
       if (errorId) {
         const msgError = data.eventErrors
-          .filter((msgErr) => !msgErr.resolvedBy.messageId)
+          .filter((msgErr) => !msgErr?.resolvedBy?.eventId)
           .find((e) => e._id.toString() === errorId)
         if (msgError) return setMessageData(msgError)
         if (data.operationError?.id === errorId) return setMessageData(data.operationError)
@@ -57,7 +57,7 @@ export const MessageDataProvider = ({ children, operationId }: { children: React
               operation: data.operation,
               operationError: data.operationError,
               events: data.events,
-              eventErrors: data.eventErrors.filter((msgErr) => !msgErr.resolvedBy.messageId),
+              eventErrors: data.eventErrors.filter((msgErr) => !msgErr?.resolvedBy?.eventId),
             }
           : undefined,
         loading,

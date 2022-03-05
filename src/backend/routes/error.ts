@@ -10,7 +10,7 @@ export const errorRouter = (redis: RedisClientType<any, any>) => {
       const { errorId } = req.params
       const msgError = await EventError.findById(errorId)
       if (!msgError) throw new Error('Cannot find msgError')
-      if (msgError.resolvedBy.messageId) throw new Error('This error is already resolved')
+      if (msgError.resolvedBy.eventId) throw new Error('This error is already resolved')
       const message = await Event.findById(msgError.parentId)
       if (!message) throw new Error('Cannot find message')
 

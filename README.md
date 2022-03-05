@@ -16,9 +16,20 @@ For message broker, light weight [Redis Stream](https://redis.io/topics/streams-
 - Event Management
   - list of events of all subjects
   - full event chain visualization for each command
+    ![event-chain](https://github.com/hoffnung8493/event-driven-modular-monolith/blob/master/readme-assets/event-chain.png?raw=true)
   - Error Logging
   - Retry failed consumption from DLQ
-    ![event-chain](https://github.com/hoffnung8493/event-driven-modular-monolith/blob/master/readme-assets/event-chain.png?raw=true)
+  ```
+  // terminal
+  Event! - [User-nameUpdated]
+  Event! - [Blog-userUpdated]
+  Failed 1 times, clientGroup: Comment, errMsg: Test Error!! eventId:622303733628c902f133004b
+  Failed 2 times, clientGroup: Comment, errMsg: Test Error!! eventId:622303733628c902f133004b
+  Failed 3 times, clientGroup: Comment, errMsg: Test Error!! eventId:622303733628c902f133004b
+  Failed 4 times, clientGroup: Comment, errMsg: Test Error!! eventId:622303733628c902f133004b
+  Failed 5 times, clientGroup: Comment, errMsg: Test Error!! eventId:622303733628c902f133004b
+  Error added to dead letter queue
+  ```
 
 # How to get started
 
