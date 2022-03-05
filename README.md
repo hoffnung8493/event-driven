@@ -13,11 +13,12 @@ For message broker, light weight [Redis Stream](https://redis.io/topics/streams-
   If the consumer does not acknowledge within a configured duration, the message borker pushes the event again to the consumer
 - Dead Letter Queue(DLQ)\
   If the consumer fails to acknowledge the event for more than 5 times, it is removed(acknowledged) from the event stream and stored in DLQ.
-- Event Dashboard
+- Event Management
   - list of events of all subjects
   - full event chain visualization for each command
   - Error Logging
   - Retry failed consumption from DLQ
+    ![event-chain](https://github.com/hoffnung8493/event-driven-modular-monolith/blob/master/readme-assets/event-chain.png?raw=true)
 
 # How to get started
 
