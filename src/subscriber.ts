@@ -29,17 +29,21 @@ export const Subscriber = async <ClientGroups extends string, Subjects extends s
       clientGroup: ClientGroups
     }) => Promise<any>
   }) => {
-    const cfg = await configureMessageProcessingFunctions<ClientGroups, Subjects>(
-      redis,
-      clientGroup,
-      consumerName,
-      subject,
-      publishingSubject,
-      eventHandler
-    )
-    cfg.processUnackedPendingMessages()
-    cfg.processNewMessages()
-    setInterval(() => cfg.retryMessagesThatAreIdleFor(10 * 1000), 10 * 1000)
+    try {
+      const cfg = await configureMessageProcessingFunctions<ClientGroups, Subjects>(
+        redis,
+        clientGroup,
+        consumerName,
+        subject,
+        publishingSubject,
+        eventHandler
+      )
+      cfg.processUnackedPendingMessages()
+      cfg.processNewMessages()
+      setInterval(() => cfg.retryMessagesThatAreIdleFor(10 * 1000), 10 * 1000)
+    } catch (err) {
+      throw err
+    }
   }
 }
 
@@ -59,12 +63,10 @@ const configureMessageProcessingFunctions = async <ClientGroups extends string, 
   publishingSubject: Subjects,
   eventHandler: EventHandler<ClientGroups>
 ) => {
-  //upsert client group
-  await redis
-    .sendCommand(['XGROUP', 'CREATE', subject, clientGroup, '$', 'MKSTREAM'])
-    .then((result) => console.log(`${clientGroup} listening to ${subject}`))
-    .catch((err) => !err.message.includes('Consumer Group name already exists') && console.log(err))
-
+  await redis.sendCommand(['XGROUP', 'CREATE', subject, clientGroup, '$', 'MKSTREAM']).catch((err) => {
+    if (!err.message.includes('Consumer Group name already exists')) throw err
+  })
+  console.log(`${clientGroup} listening to ${subject}`)
   const processUnackedPendingMessages = async () => {
     const result = (await redis.sendCommand(['XREADGROUP', 'GROUP', clientGroup, consumerName, 'STREAMS', subject, '0'])) as any
     if (result) processMessage(result[0][1], redis, subject, publishingSubject, clientGroup, eventHandler)
@@ -110,6 +112,8 @@ const configureMessageProcessingFunctions = async <ClientGroups extends string, 
     processNewMessages,
     retryMessagesThatAreIdleFor,
   }
+
+  //upsert client group
 }
 
 const processMessage = async <Subjects extends string, ClientGroups extends string, T1 extends Event<Subjects>>(
