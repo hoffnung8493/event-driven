@@ -1,7 +1,7 @@
 # event-driven
 
-'event-driven' library aims to simplify building backends in event driven architecture.
-For message broker, light weight [Redis Stream](https://redis.io/topics/streams-intro) is used and for event store, the well known NoSQL database, MongoDB is used. Note that event store stores all commands, events, their errors, and also other some analytical data. The errors stored in the event store is also used as a dead letter queue(DLQ)
+'event-driven' library aims to simplify building backends in an event driven style(event driven architecture).
+For message broker, light weight [Redis Stream](https://redis.io/topics/streams-intro) is used and for event store, the well known NoSQL database, MongoDB, is used. Note that event store stores all commands, events, their errors, and also some other analytical data used for monitoring. The errors stored in the event store is also used as a dead letter queue(DLQ), which is a crucial feature when implementing event driven architecture.
 
 ## Included features
 
@@ -11,14 +11,6 @@ For message broker, light weight [Redis Stream](https://redis.io/topics/streams-
 - Horizontal scaling for subscription(fan out by using consumer groups)
 - Retry Logic with acknowledgement\
   If the consumer does not acknowledge within a configured duration, the message borker pushes the event again to the consumer
-- Dead Letter Queue(DLQ)\
-  If the consumer fails to acknowledge the event for more than 5 times, it is removed(acknowledged) from the event stream and stored in DLQ.
-- Event Management
-  - list of events of all subjects
-  - full event chain visualization for each command
-    ![event-chain](https://github.com/hoffnung8493/event-driven-modular-monolith/blob/master/readme-assets/event-chain.png?raw=true)
-  - Error Logging
-  - Check error message and retry failed consumption from DLQ
   ```
   // terminal
   Event! - [User-nameUpdated]
@@ -30,7 +22,14 @@ For message broker, light weight [Redis Stream](https://redis.io/topics/streams-
   Failed 5 times, clientGroup: Comment, errMsg: Test Error!! eventId:622303733628c902f133004b
   Error added to dead letter queue
   ```
-  ![dead-letter-queue](https://github.com/hoffnung8493/event-driven-modular-monolith/blob/master/readme-assets/dead-letter-queue.png?raw=true)
+- Dead Letter Queue(DLQ)\
+  If the consumer fails to acknowledge the event for more than 5 times, it is removed(acknowledged) from the event stream and stored in DLQ.
+- Event Management
+  - list of events of all subjects
+  - full event chain visualization for each command
+    ![event-chain](https://github.com/hoffnung8493/event-driven-modular-monolith/blob/master/readme-assets/event-chain.png?raw=true)
+  - Check error message and retry failed consumption from DLQ
+    ![dead-letter-queue](https://github.com/hoffnung8493/event-driven-modular-monolith/blob/master/readme-assets/dead-letter-queue.png?raw=true)
 
 # How to get started
 
@@ -49,10 +48,10 @@ For now here is a full [boilerplate](https://github.com/hoffnung8493/event-drive
   - Each event should store a version number
   - When version is upgraded, provide a function that updates old event data to the newest version
 
-# Why Redis for message broker?
+# Why Redis for event broker?
 
-Other considered message brokers are Kafka, RabbitMQ Stream, NATS JetStream.
-All of them meet the requirement as a message broker for building event driven architecture.
+Other considered event brokers are Kafka, RabbitMQ Stream, NATS JetStream.
+All of them meet the requirement as a event broker for building event driven architecture.
 But only Redis Stream meets all of the following criteria.
 
 - Light weight

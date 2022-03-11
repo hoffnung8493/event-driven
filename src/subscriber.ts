@@ -62,7 +62,7 @@ const configureMessageProcessingFunctions = async <ClientGroups extends string, 
   //upsert client group
   await redis
     .sendCommand(['XGROUP', 'CREATE', subject, clientGroup, '$', 'MKSTREAM'])
-    .then((result) => console.log({ result }))
+    .then((result) => console.log(`${clientGroup} listening to ${subject}`))
     .catch((err) => !err.message.includes('Consumer Group name already exists') && console.log(err))
 
   const processUnackedPendingMessages = async () => {

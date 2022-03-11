@@ -1,6 +1,6 @@
 {
   "name": "event-driven",
-  "version": "1.0.19",
+  "version": "1.0.21",
   "description": "makes building event-driven-architecture easy",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -18,7 +18,8 @@
     "retry",
     "eventual consistency",
     "pubsub",
-    "DLQ"
+    "DLQ",
+    "event-driven"
   ],
   "author": "Sihoon Kim",
   "license": "ISC",
