@@ -38,8 +38,8 @@ export const Subscriber = async <ClientGroups extends string, Subjects extends s
         publishingSubject,
         eventHandler
       )
-      cfg.processUnackedPendingMessages()
-      cfg.processNewMessages()
+      await cfg.processUnackedPendingMessages()
+      cfg.listenToNewMessages()
       setInterval(() => cfg.retryMessagesThatAreIdleFor(10 * 1000), 10 * 1000)
     } catch (err) {
       throw err
@@ -87,7 +87,6 @@ const configureMessageProcessingFunctions = async <ClientGroups extends string, 
     ])) as any
 
     if (result) await processMessage(result[0][1], redis, subject, publishingSubject, clientGroup, eventHandler)
-    processNewMessages()
   }
 
   const retryMessagesThatAreIdleFor = async (ms: number) => {
@@ -107,9 +106,13 @@ const configureMessageProcessingFunctions = async <ClientGroups extends string, 
       retryMessagesThatAreIdleFor(ms)
     } catch (err) {}
   }
+
+  const listenToNewMessages = async () => {
+    while (true) await processNewMessages()
+  }
   return {
     processUnackedPendingMessages,
-    processNewMessages,
+    listenToNewMessages,
     retryMessagesThatAreIdleFor,
   }
 
