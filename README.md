@@ -47,6 +47,8 @@ For now here is a full [boilerplate](https://github.com/hoffnung8493/event-drive
 - Event Version Control
   - Each event should store a version number
   - When version is upgraded, provide a function that updates old event data to the newest version
+- Able to smoothly split a single module into multiple modules
+- Able to OperationInit to none request initiation, such as external event subscription/webhook etc.
 
 # Why Redis for event broker?
 

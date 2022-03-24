@@ -8,34 +8,30 @@ export const errorRouter = (redis: RedisClientType<any, any>) => {
   router.put('/:errorId/retry', async (req, res) => {
     try {
       const { errorId } = req.params
-      const msgError = await EventError.findById(errorId)
-      if (!msgError) throw new Error('Cannot find msgError')
-      if (msgError.resolvedBy.eventId) throw new Error('This error is already resolved')
-      const message = await Event.findById(msgError.parentId)
-      if (!message) throw new Error('Cannot find message')
+      const eventError = await EventError.findOneAndUpdate(
+        { _id: errorId, isResolved: false },
+        { isResolved: true },
+        { new: true }
+      )
+      if (!eventError) throw new Error('Cannot find eventError')
+      const event = await Event.findById(eventError.parentId)
+      if (!event) throw new Error('Cannot find event')
 
       await redis.sendCommand([
         'XADD',
-        message.subject,
+        event.subject,
         '*',
         'operationId',
-        msgError.operationId.toHexString(),
+        eventError.operationId.toHexString(),
         'eventId',
-        msgError.parentId.toHexString(),
+        eventError.parentId.toHexString(),
         'data',
-        JSON.stringify(message.data),
+        JSON.stringify(event.data),
         'retryingClientGroup',
-        msgError.clientGroup,
+        eventError.clientGroup,
       ])
-      await msgError
-        .updateOne(
-          { _id: msgError._id },
-          { $push: { republish: { targetClientGroup: msgError.clientGroup, createdAt: new Date() } } }
-        )
-        .exec()
       return res.json({})
     } catch (err) {
-      console.error(err)
       if (err instanceof Error) res.status(500).json(err.message)
       else res.status(500).json('something went wrong')
     }

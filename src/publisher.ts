@@ -1,25 +1,26 @@
 import { RedisClientType } from 'redis'
 import { Types } from 'mongoose'
-import { createEvent, Event, EventError, EventSummary } from './backend/models'
+import { createEvent, Event, EventError } from './backend/models'
 
-export interface PublisherInput<ClientGroups extends string> {
-  client: RedisClientType<any, any>
-  clientGroup: ClientGroups
-  parentId: Types.ObjectId
-  operationId: Types.ObjectId
+export interface PublisherInput {
+  config: {
+    client: RedisClientType<any, any>
+    clientGroup: string
+    parentId: Types.ObjectId
+    operationId: Types.ObjectId
+  }
 }
 
-export const Publisher = <Subjects extends string, ClientGroups extends string, T extends Event<Subjects>>({
-  client,
-  clientGroup,
-  operationId,
-  parentId,
+export const Publisher = <T extends Event<string>>({
+  config,
   subject,
 }: {
-  client: RedisClientType<any, any>
-  clientGroup: ClientGroups
-  operationId: Types.ObjectId
-  parentId: Types.ObjectId
+  config: {
+    client: RedisClientType<any, any>
+    clientGroup: string
+    operationId: Types.ObjectId
+    parentId: Types.ObjectId
+  }
   subject: T['subject']
 }) => {
   const receivedAt = new Date()
@@ -28,12 +29,12 @@ export const Publisher = <Subjects extends string, ClientGroups extends string, 
       try {
         const eventId = new Types.ObjectId()
 
-        await client.sendCommand([
+        await config.client.sendCommand([
           'XADD',
           subject,
           '*',
           'operationId',
-          operationId.toHexString(),
+          config.operationId.toHexString(),
           'eventId',
           eventId.toHexString(),
           'data',
@@ -41,7 +42,8 @@ export const Publisher = <Subjects extends string, ClientGroups extends string, 
         ])
         //@ts-ignore
         console.log(`Event! - [${subject}]`)
-        const event = await createEvent<ClientGroups, Subjects, T>({
+        const { operationId, parentId, clientGroup } = config
+        const event = await createEvent<T>({
           _id: eventId,
           operationId,
           parentId,
@@ -52,8 +54,7 @@ export const Publisher = <Subjects extends string, ClientGroups extends string, 
           publishedAt: new Date(),
           republish: [],
         })
-        EventError.updateOne({ operationId, parentId, clientGroup }, { 'resolvedBy.messageId': event._id }).exec()
-        EventSummary.updateOne({ subject }, { $inc: { count: 1 } }).exec()
+        EventError.updateOne({ operationId, parentId, clientGroup }, { 'resolvedBy.eventId': event._id }).exec()
         resolve({ eventId })
       } catch (err) {
         console.error(err)

@@ -20,7 +20,7 @@ export const eventAdminInit = async (Subjects: string[], MONGO_URI: string, dbNa
     await Promise.all(
       Object.values(Subjects).map(async (subject) => {
         if (!subjectSummaries.find((v) => v.subject === subject))
-          await new EventSummary({ subject, messageCount: 0, unresolvedErrorCount: 0 }).save()
+          await new EventSummary({ subject, childClientGroups: [] }).save()
       })
     )
   } catch (err) {

@@ -40,7 +40,7 @@ export interface Event<Subjects> {
   data: any
 }
 
-export const createEvent = async <ClientGroups extends string, Subjects extends string, T extends Event<Subjects>>(data: {
+export const createEvent = async <T extends Event<string>>(data: {
   _id: Types.ObjectId
   operationId: Types.ObjectId
   parentId: Types.ObjectId
@@ -50,7 +50,7 @@ export const createEvent = async <ClientGroups extends string, Subjects extends 
   receivedAt: Date
   publishedAt: Date
   republish: {
-    targetClientGroup: ClientGroups
+    targetClientGroup: string
     createdAt: Date
   }[]
 }) => new Event(data).save()
