@@ -2,10 +2,12 @@ import express from 'express'
 import path from 'path'
 import { verify } from 'jsonwebtoken'
 import { errorRouter } from './routes/error'
-import { RedisClientType } from 'redis'
 import { subjectRouter } from './routes/subject'
 import { operationRouter } from './routes/operation'
 import { authRouter } from './routes/auth'
+import { streamRouter } from './routes/stream'
+import { JetStreamManager, JetStreamClient } from 'nats'
+import { moudleRouter } from './routes/modules'
 export * from './models'
 
 declare module 'express' {
@@ -26,11 +28,29 @@ const authenticateAdmin =
     return next()
   }
 
-export const applyMiddleware = (app: express.Express, ACCESS_TOKEN_SECRET: string, redis: RedisClientType<any, any>) => {
-  app.use(authenticateAdmin(ACCESS_TOKEN_SECRET))
-  app.use(express.static(path.resolve(__dirname, '../../client/build')))
-  app.use('/event-api/errors', errorRouter(redis))
-  app.use('/event-api/subjects', subjectRouter(redis))
-  app.use('/event-api/auth', authRouter())
-  app.use('/event-api/operations', operationRouter())
+export const eventManagerRouter = (ACCESS_TOKEN_SECRET: string, jsc: JetStreamManager, js: JetStreamClient) => {
+  const router = express.Router()
+  // router.use(express.static('../../client/build'))
+  const publicPath = path.resolve(__dirname, '../../client/build')
+  // console.log({ publicPath })
+  // router.use('/', express.static(publicPath))
+  router.use(express.static(publicPath))
+
+  router.use(authenticateAdmin(ACCESS_TOKEN_SECRET))
+  router.use('/api/streams', streamRouter(jsc))
+  router.use('/api/modules', moudleRouter(jsc))
+  router.use('/api/errors', errorRouter(js))
+  router.use('/api/subjects', subjectRouter(js))
+  router.use('/api/auth', authRouter())
+  router.use('/api/operations', operationRouter())
+  return router
 }
+
+// export const applyMiddleware = (app: express.Express, ACCESS_TOKEN_SECRET: string, redis: RedisClientType<any, any>) => {
+//   console.log(mongoose.connection, 123123)
+//   app.use(authenticateAdmin(ACCESS_TOKEN_SECRET))
+//   app.use('/event-api/errors', errorRouter(redis))
+//   app.use('/event-api/subjects', subjectRouter(redis))
+//   app.use('/event-api/auth', authRouter())
+//   app.use('/event-api/operations', operationRouter())
+// }

@@ -36,7 +36,7 @@ const ErrorDetail: React.FC<EventErrorDoc> = (msgError) => {
         }}
       >
         <Typography sx={{ flex: '1 1 100%' }} variant="h6" id="tableTitle" component="div">
-          Error | {msgError.publishingSubject}{' '}
+          Error
           <Button color="warning" variant="contained" onClick={() => mutate({})} disabled={loading}>
             retry
           </Button>
@@ -57,7 +57,7 @@ const ErrorDetail: React.FC<EventErrorDoc> = (msgError) => {
             </TableRow>
             <TableRow>
               <TableCell>Subject</TableCell>
-              <TableCell>{msgError.publishingSubject}</TableCell>
+              <TableCell></TableCell>
             </TableRow>
             <TableRow>
               <TableCell>Client Group</TableCell>

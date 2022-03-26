@@ -17,7 +17,7 @@ const EventTable: React.FC<{ subject: string }> = ({ subject }) => {
   const [eDate] = useState(new Date().toISOString())
   const { data, loading } = useQuery<{ events: EventDoc[]; count: number }>(
     'get',
-    `/subjects/${subject}?sDate=${sDate}&eDate=${eDate}`
+    `/api/subjects/${subject}?sDate=${sDate}&eDate=${eDate}`
   )
 
   if (loading || !data)

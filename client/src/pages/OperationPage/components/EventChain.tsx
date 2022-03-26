@@ -38,7 +38,7 @@ const EventChain: React.FC<{
       ...errors
         .filter((e) => e.parentId.toString() === parentId)
         .map((e) => ({
-          name: `[ERROR]${e.publishingSubject}`,
+          name: '[ERROR]',
           attributes: {
             id: e._id,
             clientGroup: e.clientGroup,

@@ -19,8 +19,8 @@ import moment from 'moment'
 const formatDate = (date: Date) => moment(date).format('YY/MM/DD HH:mm:ss')
 
 interface MsgError {
-  message: string
-  stack?: string
+  message?: string | undefined
+  stack?: string | undefined
   createdAt: Date
 }
 

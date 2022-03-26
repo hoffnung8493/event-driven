@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react'
 import axios, { Method, AxiosResponse } from 'axios'
 
-const useMutation = (method: Method, url: string) => {
-  const [data, setData] = useState<AxiosResponse>()
+function useMutation<T>(method: Method, url: string) {
+  const [data, setData] = useState<AxiosResponse<T>['data']>()
   const [error, setError] = useState<string>()
   const [loading, setLoading] = useState(false)
   const mutate = useCallback(
@@ -17,6 +17,7 @@ const useMutation = (method: Method, url: string) => {
         })
         setData(response)
       } catch (error) {
+        console.log({ error })
         if (axios.isAxiosError(error)) setError(error.response?.data)
         else if (error instanceof Error) setError(error.message)
       }

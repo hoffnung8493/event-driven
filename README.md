@@ -1,7 +1,7 @@
 # event-driven
 
 'event-driven' library aims to simplify building backends in an event driven style(event driven architecture).
-For message broker, light weight [Redis Stream](https://redis.io/topics/streams-intro) is used and for event store, the well known NoSQL database, MongoDB, is used. Note that event store stores all commands, events, their errors, and also some other analytical data used for monitoring. The errors stored in the event store is also used as a dead letter queue(DLQ), which is a crucial feature when implementing event driven architecture.
+For message broker, light weight [NATS JetStream](https://docs.nats.io/nats-concepts/jetstream) is used and for event store, the well known NoSQL database, MongoDB, is used. Note that event store stores all commands, events, their errors, and also some other analytical data used for monitoring. The errors stored in the event store is also used as a dead letter queue(DLQ), which is a crucial feature when implementing event driven architecture.
 
 ## Included features
 
@@ -50,7 +50,7 @@ For now here is a full [boilerplate](https://github.com/hoffnung8493/event-drive
 - Able to smoothly split a single module into multiple modules
 - Able to OperationInit to none request initiation, such as external event subscription/webhook etc.
 
-# Why Redis for event broker?
+<!-- # Why Redis for event broker?
 
 Other considered event brokers are Kafka, RabbitMQ Stream, NATS JetStream.
 All of them meet the requirement as a event broker for building event driven architecture.
@@ -69,4 +69,4 @@ But only Redis Stream meets all of the following criteria.
 - Reach MongoDB Query Language(MQL) that can be used to query unstructured event data
 - With MongoDB Data Lake event data can easily be stored to and queried from cheap file storage, such as AWS S3
 - Faimilarity. MongoDB Is the most popular NoSQL database
-- Managed services available with free plan
+- Managed services available with free plan -->

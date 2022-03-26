@@ -6,7 +6,7 @@ export const BackendConnectionContext = createContext(
 )
 
 export const BackendConnectionProvider = ({ children }: { children: React.ReactNode }) => {
-  const [backendUrl, setBackendUrl] = useState(localStorage.getItem('backend-url') ?? 'http://localhost:4000/event-api')
+  const [backendUrl, setBackendUrl] = useState(localStorage.getItem('backend-url') ?? 'http://localhost:4000/event-api/api')
   useEffect(() => {
     axios.defaults.baseURL = backendUrl
     localStorage.setItem('backend-url', backendUrl)

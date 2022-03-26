@@ -17,7 +17,7 @@ const ErrorTable: React.FC<{ subject: string }> = ({ subject }) => {
   const [eDate] = useState(new Date().toISOString())
   const { data, loading } = useQuery<{ errors: EventErrorDoc[]; count: number }>(
     'get',
-    `/subjects/${subject}/errors?sDate=${sDate}&eDate=${eDate}`
+    `/api/subjects/${subject}/errors?sDate=${sDate}&eDate=${eDate}`
   )
   if (loading || !data)
     return (
@@ -41,7 +41,6 @@ const ErrorTable: React.FC<{ subject: string }> = ({ subject }) => {
         <Table sx={{ minWidth: 650 }} aria-label="simple table">
           <TableHead>
             <TableRow>
-              <TableCell>Publishing Subject</TableCell>
               <TableCell align="right">Client Group</TableCell>
               <TableCell align="right">Error Message</TableCell>
               <TableCell align="right">Error Count</TableCell>

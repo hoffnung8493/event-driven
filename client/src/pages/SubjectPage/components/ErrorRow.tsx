@@ -13,9 +13,6 @@ const ErrorRow: React.FC<{ eventError: EventErrorDoc }> = ({ eventError }) => {
         sx={{ '&:last-child td, &:last-child th': { border: 0 }, cursor: 'pointer' }}
         onClick={() => navigate(`/operations/${eventError.operationId}?error-id=${eventError._id}`)}
       >
-        <TableCell component="th" scope="row">
-          {eventError.publishingSubject}
-        </TableCell>
         <TableCell align="right">{eventError.clientGroup}</TableCell>
         <TableCell align="right">{eventError.error[0].message}</TableCell>
         <TableCell align="right">{eventError.errorCount}</TableCell>

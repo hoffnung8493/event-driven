@@ -1,8 +1,10 @@
 import { EventError, Event } from '../models'
 import express from 'express'
-import { RedisClientType } from 'redis'
+import { JetStreamClient, StringCodec, headers } from 'nats'
 
-export const errorRouter = (redis: RedisClientType<any, any>) => {
+const sc = StringCodec()
+
+export const errorRouter = (js: JetStreamClient) => {
   const router = express.Router()
 
   router.put('/:errorId/retry', async (req, res) => {
@@ -17,19 +19,12 @@ export const errorRouter = (redis: RedisClientType<any, any>) => {
       const event = await Event.findById(eventError.parentId)
       if (!event) throw new Error('Cannot find event')
 
-      await redis.sendCommand([
-        'XADD',
-        event.subject,
-        '*',
-        'operationId',
-        eventError.operationId.toHexString(),
-        'eventId',
-        eventError.parentId.toHexString(),
-        'data',
-        JSON.stringify(event.data),
-        'retryingClientGroup',
-        eventError.clientGroup,
-      ])
+      const h = headers()
+      h.append('eventId', eventError.parentId.toString())
+      h.append('operationId', eventError.operationId.toString())
+      h.append('retryingClientGroup', eventError.clientGroup)
+      await js.publish(event.subject, sc.encode(JSON.stringify(event.data)))
+
       return res.json({})
     } catch (err) {
       if (err instanceof Error) res.status(500).json(err.message)

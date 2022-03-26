@@ -25,16 +25,14 @@ export const MessageDataProvider = ({ children, operationId }: { children: React
     operationError?: OperationErrorDoc
     events: EventDoc[]
     eventErrors: EventErrorDoc[]
-  }>('get', `/operations/${operationId}`)
+  }>('get', `/api/operations/${operationId}`)
   const [searchParams] = useSearchParams()
 
   useEffect(() => {
     if (data?.operation) {
       const errorId = searchParams.get('error-id')
       if (errorId) {
-        const msgError = data.eventErrors
-          .filter((msgErr) => !msgErr?.resolvedBy?.eventId)
-          .find((e) => e._id.toString() === errorId)
+        const msgError = data.eventErrors.filter((msgErr) => !msgErr.isResolved).find((e) => e._id.toString() === errorId)
         if (msgError) return setMessageData(msgError)
         if (data.operationError?.id === errorId) return setMessageData(data.operationError)
       }
@@ -57,7 +55,7 @@ export const MessageDataProvider = ({ children, operationId }: { children: React
               operation: data.operation,
               operationError: data.operationError,
               events: data.events,
-              eventErrors: data.eventErrors.filter((msgErr) => !msgErr?.resolvedBy?.eventId),
+              eventErrors: data.eventErrors.filter((msgErr) => !msgErr.isResolved),
             }
           : undefined,
         loading,

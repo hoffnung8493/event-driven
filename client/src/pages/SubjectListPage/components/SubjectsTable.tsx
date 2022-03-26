@@ -11,7 +11,7 @@ import { EventSummaryDoc } from '../../../../../src/backend/models'
 import { useNavigate } from 'react-router-dom'
 
 export default function SubjectsTable() {
-  const { data, loading } = useQuery<EventSummaryDoc[]>('get', '/subjects')
+  const { data, loading } = useQuery<EventSummaryDoc[]>('get', '/api/streams')
   const navigate = useNavigate()
   if (loading || !data)
     return (
@@ -25,8 +25,8 @@ export default function SubjectsTable() {
         <TableHead>
           <TableRow>
             <TableCell>Subject</TableCell>
-            <TableCell align="right">Count</TableCell>
-            <TableCell align="right">Error Count</TableCell>
+            <TableCell align="right">childClientGroups Count</TableCell>
+            <TableCell align="right">childClientGroups Error Count</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -40,8 +40,8 @@ export default function SubjectsTable() {
               <TableCell component="th" scope="row">
                 {row.subject}
               </TableCell>
-              <TableCell align="right">{row.count}</TableCell>
-              <TableCell align="right">{row.unresolvedErrorCount}</TableCell>
+              <TableCell align="right">{row.childClientGroups.length}</TableCell>
+              <TableCell align="right">{row.childClientGroups.reduce<number>((a, c) => a + c.unresolvedErrorCount, 0)}</TableCell>
             </TableRow>
           ))}
         </TableBody>
