@@ -1,6 +1,6 @@
 import { createEventError, Event } from './backend/models'
 import { Types } from 'mongoose'
-import { JsMsg, JetStreamClient, StringCodec } from 'nats'
+import { JsMsg, JetStreamClient, StringCodec, AckPolicy } from 'nats'
 
 const sc = StringCodec()
 
@@ -21,29 +21,29 @@ export const Subscriber = async (clientGroup: string, js: JetStreamClient) => {
   }: {
     subject: ParentEvent['subject']
     eventHandlers: EventHandler<ParentEvent>[]
-    clientGroupNumber?: number
   }) => {
     for (let i = 0; i < eventHandlers.length; i++) {
+      const durable_name = `${clientGroup}=${subject.replace(/\./g, '-')}=${i}`
       try {
         const psub = await js.pullSubscribe(subject, {
           config: {
-            durable_name: `${clientGroup}=${subject.replace(/\./g, '-')}=${i}`,
+            durable_name,
             max_ack_pending: 30,
             ack_wait: 10000000000,
           },
+          mack: true,
         })
+
         const done = (async () => {
-          for await (const m of psub) {
-            processEvent(m, js, clientGroup, eventHandlers[i])
-          }
+          for await (const m of psub) await processEvent(m, js, clientGroup, eventHandlers[i])
         })()
 
-        psub.pull({ batch: 100, expires: 10000 })
+        psub.pull({ batch: 10, expires: 10000 })
         setInterval(() => {
-          psub.pull({ batch: 100, expires: 10000 })
+          psub.pull({ batch: 10, expires: 10000 })
         }, 10000)
       } catch (err) {
-        console.error(`clientGroup: ${clientGroup}, clientGroupNumber: ${i}, subject: ${subject}`)
+        console.error(`clientGroup: ${clientGroup}, index: ${i}, subject: ${subject}`)
         throw err
       }
     }
@@ -63,7 +63,6 @@ const processEvent = async <ParentEvent extends Event<string>>(
   const msgData = JSON.parse(sc.decode(jsMsg.data))
   const retryingClientGroup = headers?.get('retryingClientGroup')
   if (retryingClientGroup && retryingClientGroup !== clientGroup) {
-    console.log('acked-1')
     jsMsg.ack()
     return
   }
@@ -73,7 +72,6 @@ const processEvent = async <ParentEvent extends Event<string>>(
     console.error(`Failed ${errorCount} times, clientGroup: ${clientGroup}, errMsg: ${error.message} eventId:${parentId}`)
     if (errorCount > 4) {
       console.log(`Error added to dead letter queue`)
-      console.log('acked-3')
       jsMsg.ack()
     }
   }
@@ -87,7 +85,6 @@ const processEvent = async <ParentEvent extends Event<string>>(
         parentId,
       },
     })
-    console.log('acked-2')
     jsMsg.ack()
   } catch (error) {
     await fail(error as Error)

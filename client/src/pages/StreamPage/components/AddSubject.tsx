@@ -1,7 +1,6 @@
 import { Button, TextField, Typography } from '@mui/material'
 import { Box } from '@mui/system'
 import React from 'react'
-import useMutation from '../../../hooks/useMutation'
 
 const AddSubject: React.FC<{ mutate: (input: any) => Promise<any>; loading: boolean }> = ({ mutate, loading }) => {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
