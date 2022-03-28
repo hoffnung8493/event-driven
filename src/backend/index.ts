@@ -31,10 +31,10 @@ const authenticateAdmin =
 export const eventManagerRouter = (ACCESS_TOKEN_SECRET: string, jsc: JetStreamManager, js: JetStreamClient) => {
   const router = express.Router()
   // router.use(express.static('../../client/build'))
-  const publicPath = path.resolve(__dirname, '../../client/build')
+  // const publicPath = path.resolve(__dirname, '../../client/build')
   // console.log({ publicPath })
   // router.use('/', express.static(publicPath))
-  router.use(express.static(publicPath))
+  // router.use(express.static(publicPath))
 
   router.use(authenticateAdmin(ACCESS_TOKEN_SECRET))
   router.use('/api/streams', streamRouter(jsc))
@@ -46,11 +46,4 @@ export const eventManagerRouter = (ACCESS_TOKEN_SECRET: string, jsc: JetStreamMa
   return router
 }
 
-// export const applyMiddleware = (app: express.Express, ACCESS_TOKEN_SECRET: string, redis: RedisClientType<any, any>) => {
-//   console.log(mongoose.connection, 123123)
-//   app.use(authenticateAdmin(ACCESS_TOKEN_SECRET))
-//   app.use('/event-api/errors', errorRouter(redis))
-//   app.use('/event-api/subjects', subjectRouter(redis))
-//   app.use('/event-api/auth', authRouter())
-//   app.use('/event-api/operations', operationRouter())
-// }
+export const eventManagerFrontendPath = path.resolve(__dirname, '../../client/build')

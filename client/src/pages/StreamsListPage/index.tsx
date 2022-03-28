@@ -1,13 +1,13 @@
 import { Container, Box, CircularProgress } from '@mui/material'
-import Header from '../../components/Header'
 import CreateStream from './components/CreateStream'
 import StreamTable from './components/StreamTable'
 import useQuery from '../../hooks/useQuery'
 import useMutation from '../../hooks/useMutation'
 import { StreamInfo } from 'nats'
-import { useEffect } from 'react'
+import { useContext, useEffect } from 'react'
 import ModulesTable from './components/ModulesTable'
 import CreateModule from './components/CreateModule'
+import { BackendConnectionContext } from '../../contexts/backendConnection'
 
 const StreamsListPage = () => {
   const { data: streamInfo, loading: mutationLoading, mutate } = useMutation<StreamInfo>('post', '/api/streams')
@@ -18,6 +18,12 @@ const StreamsListPage = () => {
     mutate: mutateModule,
   } = useMutation<{ module: string }>('post', '/api/modules')
   const { data: modules, loading: modulesLoading, reload: reloadModules } = useQuery<string[]>('get', '/api/modules')
+
+  const { setTitle } = useContext(BackendConnectionContext)
+
+  useEffect(() => {
+    setTitle('Streams')
+  }, [setTitle])
 
   useEffect(() => {
     if (streamInfo || module) {
@@ -35,7 +41,6 @@ const StreamsListPage = () => {
 
   return (
     <Container component="main" maxWidth="xl">
-      <Header title={`Streams`} />
       <Box sx={{ my: 3 }}>
         <CreateModule loading={moduleMutationLoading} mutate={mutateModule} />
         <ModulesTable modules={modules} />
