@@ -117,7 +117,7 @@ const processEvent = async <ParentEvent extends Event<string>>(
     })
     let diff = new Date().getTime() - start.getTime()
     if (showProcessTimeWarning && showProcessTimeWarning < diff)
-      console.warn('\x1b[33m%s\x1b[0m', `[WARNING-TIME] durableName: ${durableName} ${diff / 1000}s, eventId:${parentId}`)
+      console.log('\x1b[33m%s\x1b[0m', `[WARNING-TIME] durableName: ${durableName} ${diff / 1000}s, eventId:${parentId}`)
     jsMsg.ack()
   } catch (error) {
     await fail(error as Error)
