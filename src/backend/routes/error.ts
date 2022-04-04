@@ -7,6 +7,11 @@ const sc = StringCodec()
 export const errorRouter = (js: JetStreamClient) => {
   const router = express.Router()
 
+  router.get('/', async (req, res) => {
+    const errors = await EventError.find({ isResolved: false })
+    return res.json(errors)
+  })
+
   router.put('/:errorId/retry', async (req, res) => {
     try {
       const { errorId } = req.params
@@ -22,7 +27,7 @@ export const errorRouter = (js: JetStreamClient) => {
       const h = headers()
       h.append('eventId', eventError.parentId.toString())
       h.append('operationId', eventError.operationId.toString())
-      h.append('retryingClientGroup', eventError.clientGroup)
+      h.append('retryingDurableName', eventError.durableName)
       await js.publish(event.subject, sc.encode(JSON.stringify(event.data)))
 
       return res.json({})

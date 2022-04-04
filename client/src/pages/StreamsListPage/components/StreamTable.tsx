@@ -16,20 +16,8 @@ const StreamTable: React.FC<{ streams: StreamInfo[] }> = ({ streams }) => {
         <TableHead>
           <TableRow>
             <TableCell>Name</TableCell>
-            <TableCell align="right">subjects</TableCell>
-            <TableCell align="right">retention</TableCell>
-            <TableCell align="right">messages</TableCell>
-            <TableCell align="right">bytes</TableCell>
-            <TableCell align="right">first_ts</TableCell>
-            <TableCell align="right">last_ts</TableCell>
-            <TableCell align="right">consumer_count</TableCell>
-            <TableCell align="right">max_age</TableCell>
-            <TableCell align="right">max_msgs_per_subject</TableCell>
-            <TableCell align="right">max_msg_size</TableCell>
-            <TableCell align="right">discard</TableCell>
-            <TableCell align="right">storage</TableCell>
-            <TableCell align="right">num_replicas</TableCell>
-            <TableCell align="right">duplicate_window</TableCell>
+            <TableCell>messages</TableCell>
+            <TableCell>Size(MB)</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -44,46 +32,10 @@ const StreamTable: React.FC<{ streams: StreamInfo[] }> = ({ streams }) => {
                 {stream.config.name}
               </TableCell>
               <TableCell component="th" scope="row">
-                {stream.config.subjects.length}
-              </TableCell>
-              <TableCell component="th" scope="row">
-                {stream.config.retention}
-              </TableCell>
-              <TableCell component="th" scope="row">
                 {stream.state.messages}
               </TableCell>
               <TableCell component="th" scope="row">
-                {stream.state.bytes}
-              </TableCell>
-              <TableCell component="th" scope="row">
-                {stream.state.first_ts}
-              </TableCell>
-              <TableCell component="th" scope="row">
-                {stream.state.last_ts}
-              </TableCell>
-              <TableCell component="th" scope="row">
-                {stream.state.consumer_count}
-              </TableCell>
-              <TableCell component="th" scope="row">
-                {stream.config.max_age}
-              </TableCell>
-              <TableCell component="th" scope="row">
-                {stream.config.max_msgs_per_subject}
-              </TableCell>
-              <TableCell component="th" scope="row">
-                {stream.config.max_msg_size}
-              </TableCell>
-              <TableCell component="th" scope="row">
-                {stream.config.discard}
-              </TableCell>
-              <TableCell component="th" scope="row">
-                {stream.config.storage}
-              </TableCell>
-              <TableCell component="th" scope="row">
-                {stream.config.num_replicas}
-              </TableCell>
-              <TableCell component="th" scope="row">
-                {stream.config.duplicate_window}
+                {stream.state.bytes / 1000000}
               </TableCell>
             </TableRow>
           ))}

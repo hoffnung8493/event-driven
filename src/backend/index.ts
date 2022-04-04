@@ -7,7 +7,6 @@ import { operationRouter } from './routes/operation'
 import { authRouter } from './routes/auth'
 import { streamRouter } from './routes/stream'
 import { JetStreamManager, JetStreamClient } from 'nats'
-import { moudleRouter } from './routes/modules'
 export * from './models'
 
 declare module 'express' {
@@ -38,7 +37,6 @@ export const eventManagerRouter = (ACCESS_TOKEN_SECRET: string, jsc: JetStreamMa
 
   router.use(authenticateAdmin(ACCESS_TOKEN_SECRET))
   router.use('/api/streams', streamRouter(jsc))
-  router.use('/api/modules', moudleRouter(jsc))
   router.use('/api/errors', errorRouter(js))
   router.use('/api/subjects', subjectRouter(js))
   router.use('/api/auth', authRouter())

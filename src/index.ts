@@ -1,11 +1,39 @@
 export * from './operationInit'
 export * from './publisher'
 export * from './subscriber'
+export * from './subscriberBatch'
 export * from './backend'
-import { EventSummary } from './backend/models'
+import { StreamSummary } from './backend/models'
 import mongoose from 'mongoose'
+import { JetStreamManager } from 'nats'
+export let _showError = false
+export let _showProcessTimeWarning: number | undefined
+export let _showEventPublishes = false
+export let _maxRetryCount = 5
 
-export const eventAdminInit = async (Subjects: string[], MONGO_URI: string, dbName: string) => {
+export const eventAdminInit = async ({
+  subjects,
+  MONGO_URI,
+  dbName,
+  jsm,
+  maxRetryCount = 5,
+  logs,
+}: {
+  subjects: string[]
+  MONGO_URI: string
+  dbName: string
+  jsm: JetStreamManager
+  maxRetryCount: number
+  logs?: {
+    showEventPublishes: boolean
+    showError: boolean
+    showProcessTimeWarning?: number
+  }
+}) => {
+  _maxRetryCount = maxRetryCount
+  _showEventPublishes = !!logs?.showEventPublishes
+  _showError = !!logs?.showError
+  _showProcessTimeWarning = logs?.showProcessTimeWarning
   try {
     await mongoose.connect(MONGO_URI, { dbName })
     mongoose.connection.on('error', (err) => {
@@ -16,12 +44,33 @@ export const eventAdminInit = async (Subjects: string[], MONGO_URI: string, dbNa
       console.error('mongoose connection disconnected - ', err)
       process.exit()
     })
-    const subjectSummaries = await EventSummary.find({ subject: { $in: Object.values(Subjects) } }).select({ subject: 1 })
+
+    process.on('SIGINT', () => mongoose.connection.close())
+
+    const streamSummaries = await StreamSummary.find({})
+
     await Promise.all(
-      Object.values(Subjects).map(async (subject) => {
-        if (!subjectSummaries.find((v) => v.subject === subject))
-          await new EventSummary({ subject, childClientGroups: [] }).save()
-      })
+      subjects
+        .map((subject) => ({ stream: subject.split('.')[0], subject }))
+        .reduce<{ stream: string; subjects: string[] }[]>((a, c) => {
+          let index = a.findIndex((v) => v.stream === c.stream)
+          if (index >= 0) {
+            a[index].subjects.push(c.subject)
+            return a
+          } else return [...a, { stream: c.stream, subjects: [c.subject] }]
+        }, [])
+        .map(async ({ stream, subjects }) => {
+          const exists = streamSummaries.find((s) => s.stream === stream)
+          if (exists) {
+            const newSubjects = subjects.filter((subject) => !exists.subjects.includes(subject))
+            if (newSubjects.length === 0) return
+            await StreamSummary.updateOne({ stream }, { $addToSet: { subjects: { $each: newSubjects } } })
+          } else {
+            await jsm.streams.add({ name: stream, subjects: [`${stream}.*`, `${stream}.*.*`, `${stream}.*.*.*`] })
+            await new StreamSummary({ stream, subjects }).save()
+            console.log(`New stream created: ${stream}`)
+          }
+        })
     )
   } catch (err) {
     console.error(err)

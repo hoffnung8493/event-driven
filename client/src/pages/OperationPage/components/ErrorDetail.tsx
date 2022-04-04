@@ -19,7 +19,7 @@ import useMutation from '../../../hooks/useMutation'
 
 const ErrorDetail: React.FC<EventErrorDoc> = (msgError) => {
   const formatDate = (date: Date) => moment(date).format('YY/MM/DD HH:mm:ss')
-  const { loading, error, mutate } = useMutation('put', `/errors/${msgError._id}/retry`)
+  const { loading, error, mutate } = useMutation('put', `/api/errors/${msgError._id}/retry`)
   const [open, setOpen] = useState(false)
   useEffect(() => {
     setOpen(!!error)

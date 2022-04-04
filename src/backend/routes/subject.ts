@@ -25,7 +25,10 @@ export const subjectRouter = (js: JetStreamClient) => {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 20
       const cursor = req.query.cursor ? new Types.ObjectId(req.query.offset as string) : new Types.ObjectId()
       const query = { subject, createdAt: { $gte: new Date(sDate), $lte: new Date(eDate) }, _id: { $lt: cursor } }
-      const [events, count] = await Promise.all([Event.find(query).limit(limit), Event.find(query).countDocuments()])
+      const [events, count] = await Promise.all([
+        Event.find(query).sort({ _id: -1 }).limit(limit),
+        Event.find(query).countDocuments(),
+      ])
       res.json({ events, count })
     } catch (err) {
       if (err instanceof Error) res.status(500).json(err.message)
@@ -45,7 +48,7 @@ export const subjectRouter = (js: JetStreamClient) => {
         subject,
         createdAt: { $gte: new Date(sDate), $lte: new Date(eDate) },
         _id: { $lt: cursor },
-        resolvedAt: { $exists: false },
+        isResolved: false,
       }
       const [errors, count] = await Promise.all([EventError.find(query).limit(limit), EventError.find(query).countDocuments()])
       return res.json({ errors, count })
