@@ -14,6 +14,11 @@ type BatchEventHandler<ParentEvent extends Event<string>> = (
       clientGroup: string
       parentId: Types.ObjectId
       operationId: Types.ObjectId
+      subscribedTo: {
+        durableName: string
+        subject: string
+        eventHandlerOrder: number
+      }
     }
     jsMsg: JsMsg
     fail: (error: Error) => Promise<void>
@@ -146,6 +151,11 @@ const processEvents = async <ParentEvent extends Event<string>>(
           clientGroup,
           operationId,
           parentId,
+          subscribedTo: {
+            durableName,
+            subject,
+            eventHandlerOrder,
+          },
         },
         jsMsg,
         fail,

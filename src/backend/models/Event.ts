@@ -12,6 +12,11 @@ export interface EventDoc extends Document {
     targetClientGroup: string
     createdAt: Date
   }[]
+  subscribedTo?: {
+    durableName: string
+    subject: string
+    eventHandlerOrder: number
+  }
 }
 
 const EventSchema = new Schema(
@@ -29,6 +34,13 @@ const EventSchema = new Schema(
         createdAt: { type: Date, required: true },
       },
     ],
+    subscribedTo: {
+      type: new Schema({
+        durableName: { type: String, required: true },
+        subject: { type: String, required: true },
+        eventHandlerOrder: { type: Number, required: true },
+      }),
+    },
   },
   { timestamps: true }
 )
@@ -53,4 +65,9 @@ export const createEvent = async <T extends Event<string>>(data: {
     targetClientGroup: string
     createdAt: Date
   }[]
+  subscribedTo?: {
+    durableName: string
+    subject: string
+    eventHandlerOrder: number
+  }
 }) => new Event(data).save()

@@ -6,6 +6,7 @@ import { subjectRouter } from './routes/subject'
 import { operationRouter } from './routes/operation'
 import { authRouter } from './routes/auth'
 import { streamRouter } from './routes/stream'
+import { eventRouter } from './routes/event'
 import { JetStreamManager, JetStreamClient } from 'nats'
 export * from './models'
 
@@ -37,6 +38,7 @@ export const eventManagerRouter = (ACCESS_TOKEN_SECRET: string, jsc: JetStreamMa
 
   router.use(authenticateAdmin(ACCESS_TOKEN_SECRET))
   router.use('/api/streams', streamRouter(jsc))
+  router.use('/api/events', eventRouter(js))
   router.use('/api/errors', errorRouter(js))
   router.use('/api/subjects', subjectRouter(js))
   router.use('/api/auth', authRouter())

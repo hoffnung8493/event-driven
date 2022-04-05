@@ -11,6 +11,11 @@ export interface PublisherInput {
     clientGroup: string
     parentId: Types.ObjectId
     operationId: Types.ObjectId
+    subscribedTo?: {
+      durableName: string
+      subject: string
+      eventHandlerOrder: number
+    }
   }
 }
 
@@ -23,6 +28,11 @@ export const Publisher = <T extends Event<string>>({
     clientGroup: string
     operationId: Types.ObjectId
     parentId: Types.ObjectId
+    subscribedTo?: {
+      durableName: string
+      subject: string
+      eventHandlerOrder: number
+    }
   }
   subject: T['subject']
 }) => {
@@ -38,7 +48,7 @@ export const Publisher = <T extends Event<string>>({
         const result = await config.js.publish(subject, sc.encode(JSON.stringify(data)), { headers: h })
         if (result.duplicate) return
         if (showeEventPublishes) console.log(`Event! - [${subject}]`)
-        const { operationId, parentId, clientGroup } = config
+        const { operationId, parentId, clientGroup, subscribedTo } = config
         await createEvent<T>({
           _id: eventId,
           operationId,
@@ -49,6 +59,7 @@ export const Publisher = <T extends Event<string>>({
           receivedAt,
           publishedAt: new Date(),
           republish: [],
+          subscribedTo,
         })
         resolve({ eventId })
       } catch (err) {

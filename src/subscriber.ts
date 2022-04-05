@@ -12,6 +12,11 @@ type EventHandler<ParentEvent extends Event<string>> = (event: {
     clientGroup: string
     parentId: Types.ObjectId
     operationId: Types.ObjectId
+    subscribedTo?: {
+      durableName: string
+      subject: string
+      eventHandlerOrder: number
+    }
   }
 }) => Promise<any>
 
@@ -113,6 +118,11 @@ const processEvent = async <ParentEvent extends Event<string>>(
         clientGroup,
         operationId,
         parentId,
+        subscribedTo: {
+          durableName,
+          subject,
+          eventHandlerOrder,
+        },
       },
     })
     let diff = new Date().getTime() - start.getTime()
