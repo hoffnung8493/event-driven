@@ -137,7 +137,7 @@ const processEvents = async <ParentEvent extends Event<string>>(
       if (args.retryingDurableName && args.retryingDurableName !== durableName) {
         args.jsMsg.ack()
         return false
-      } else if (args.jsMsg.info.redeliveryCount > maxRetryCount) {
+      } else if (args.jsMsg.info.redeliveryCount >= maxRetryCount) {
         args.jsMsg.ack()
         args.fail(new Error('__NO_ACK__'))
         return false

@@ -163,7 +163,7 @@ export const getFail =
       '\x1b[31m%s\x1b[0m',
       `Failed ${errorCount} times, durableName: ${durableName}, errMsg: ${error.message}, eventId:${parentId}`
     )
-    if (errorCount > maxRetryCount) {
+    if (errorCount >= maxRetryCount) {
       console.log('\x1b[41m%s\x1b[0m', `Error added to dead letter queue`)
       jsMsg.ack()
     } else jsMsg.nak((errorCount - 1) * 5000)
