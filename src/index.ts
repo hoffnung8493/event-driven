@@ -4,7 +4,7 @@ export * from './subscriber'
 export * from './subscriberBatch'
 export * from './backend'
 import { StreamSummary, EventError } from './backend/models'
-import mongoose, { Types } from 'mongoose'
+import mongoose from 'mongoose'
 import { JetStreamManager } from 'nats'
 export let _showError = false
 export let _showProcessTimeWarning: number | undefined
@@ -16,7 +16,7 @@ export const runEventArbiter = () => {
   new CronJob('0 */15 * * * *', async () => {
     await EventError.updateMany(
       {
-        updatedAt: { $lt: new Date(new Date().getTime() - 30 * 60 * 1000) },
+        updatedAt: { $lt: new Date(new Date().getTime() - 60 * 60 * 1000) },
         errorCount: { $lt: _maxRetryCount },
         isResolved: false,
       },
