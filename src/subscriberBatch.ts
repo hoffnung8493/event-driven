@@ -174,7 +174,7 @@ const processEvents = async <ParentEvent extends Event<string>>(
     await batchEventHandler(_msgs)
     let diff = new Date().getTime() - start.getTime()
     if (showProcessTimeWarning && showProcessTimeWarning < diff)
-      console.log('\x1b[33m%s\x1b[0m', `[WARNING-TIME] durableName: ${durableName} ${diff / 1000}s, eventId:[BATCH]`)
+      console.log('\x1b[33m%s\x1b[0m', `[BATCH-WARNING-TIME] ${diff / 1000}s, durableName: ${durableName}`)
     _msgs.map((msg) => msg.jsMsg.ack())
     batch.processTime = diff
   } catch (error) {

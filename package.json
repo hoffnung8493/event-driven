@@ -1,6 +1,6 @@
 {
   "name": "event-driven",
-  "version": "1.0.32",
+  "version": "1.0.34",
   "description": "makes building event-driven-architecture easy",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -14,7 +14,7 @@
     "event store",
     "message broker",
     "dead letter queue",
-    "redis stream",
+    "NATS JetStream",
     "retry",
     "eventual consistency",
     "pubsub",
@@ -24,6 +24,7 @@
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "cron": "^1.8.2",
     "express": "^4.17.3",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^6.2.4",
@@ -31,6 +32,7 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.2",
+    "@types/cron": "^1.7.3",
     "@types/express": "^4.17.13",
     "@types/jsonwebtoken": "^8.5.8"
   }

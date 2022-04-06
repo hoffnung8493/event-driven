@@ -3,13 +3,27 @@ export * from './publisher'
 export * from './subscriber'
 export * from './subscriberBatch'
 export * from './backend'
-import { StreamSummary } from './backend/models'
-import mongoose from 'mongoose'
+import { StreamSummary, EventError } from './backend/models'
+import mongoose, { Types } from 'mongoose'
 import { JetStreamManager } from 'nats'
 export let _showError = false
 export let _showProcessTimeWarning: number | undefined
 export let _showEventPublishes = false
 export let _maxRetryCount = 5
+import { CronJob } from 'cron'
+
+export const runEventArbiter = () => {
+  new CronJob('0 */15 * * * *', async () => {
+    await EventError.updateMany(
+      {
+        updatedAt: { $lt: new Date(new Date().getTime() - 30 * 60 * 1000) },
+        errorCount: { $lt: _maxRetryCount },
+        isResolved: false,
+      },
+      { isResolved: true }
+    )
+  })
+}
 
 export const eventAdminInit = async ({
   subjects,
