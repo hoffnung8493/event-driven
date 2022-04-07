@@ -3,7 +3,6 @@ import path from 'path'
 import { verify } from 'jsonwebtoken'
 import { errorRouter } from './routes/error'
 import { subjectRouter } from './routes/subject'
-import { operationRouter } from './routes/operation'
 import { authRouter } from './routes/auth'
 import { streamRouter } from './routes/stream'
 import { eventRouter } from './routes/event'
@@ -42,7 +41,6 @@ export const eventManagerRouter = (ACCESS_TOKEN_SECRET: string, jsc: JetStreamMa
   router.use('/api/errors', errorRouter(js))
   router.use('/api/subjects', subjectRouter(js))
   router.use('/api/auth', authRouter())
-  router.use('/api/operations', operationRouter())
   return router
 }
 

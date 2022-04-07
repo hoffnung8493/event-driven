@@ -1,13 +1,10 @@
 import { Schema, Document, Types, model } from 'mongoose'
 
 export interface EventErrorDoc extends Document {
-  _id: Types.ObjectId
-  operationId: Types.ObjectId
-  parentId: Types.ObjectId
+  eventId: Types.ObjectId
   durableName: string
   clientGroup: string
-  parentSubject: string
-  eventHandlerOrder: number
+  subject: string
   errorCount: number
   error: {
     message?: string
@@ -19,46 +16,24 @@ export interface EventErrorDoc extends Document {
   updatedAt: Date
 }
 
-const EventErrorSchema = new Schema(
-  {
-    operationId: { type: Types.ObjectId, required: true },
-    parentId: { type: Types.ObjectId, required: true },
-    durableName: { type: String, required: true },
-    clientGroup: { type: String, required: true },
-    parentSubject: { type: String, required: true },
-    eventHandlerOrder: { type: Number, required: true },
-    errorCount: { type: Number, required: true },
-    error: [
-      {
-        message: String,
-        stack: String,
-        createdAt: { type: Date, required: true },
-      },
-    ],
-    isResolved: { type: Boolean, required: true, default: false },
-  },
-  { timestamps: true }
-)
+const EventErrorSchema = new Schema({}, { timestamps: true, strict: false })
 
 export const EventError = model<EventErrorDoc>('EventError', EventErrorSchema)
 
 export const createEventError = async (data: {
-  operationId: Types.ObjectId
-  parentId: Types.ObjectId
+  eventId: Types.ObjectId
   durableName: string
   clientGroup: string
   subject: string
-  eventHandlerOrder: number
   error: {
     message?: string
     stack?: string
   }
 }) => {
-  const error = { message: JSON.stringify(data.error.message), stack: data.error.stack }
+  const error = { message: JSON.stringify(data.error.message), stack: data.error.stack, createdAt: new Date() }
   const eventError = await EventError.findOneAndUpdate(
     {
-      operationId: data.operationId,
-      parentId: data.parentId,
+      eventId: data.eventId,
       durableName: data.durableName,
     },
     {
@@ -67,16 +42,14 @@ export const createEventError = async (data: {
       isResolved: false,
     },
     { new: true }
-  ).exec()
+  )
   if (eventError) return eventError.toObject()
 
   const newEventError = await new EventError({
-    operationId: data.operationId,
-    parentId: data.parentId,
+    eventId: data.eventId,
     durableName: data.durableName,
     clientGroup: data.clientGroup,
-    parentSubject: data.subject,
-    eventHandlerOrder: data.eventHandlerOrder,
+    subject: data.subject,
     errorCount: 1,
     error: [{ ...error, createdAt: new Date() }],
     isResolved: false,

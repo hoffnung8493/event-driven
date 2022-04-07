@@ -1,4 +1,3 @@
-export * from './operationInit'
 export * from './publisher'
 export * from './subscriber'
 export * from './subscriberBatch'
@@ -12,20 +11,7 @@ export let _showEventPublishes = false
 export let _maxRetryCount = 5
 import { CronJob } from 'cron'
 
-export const runEventArbiter = () => {
-  new CronJob('0 */15 * * * *', async () => {
-    await EventError.updateMany(
-      {
-        updatedAt: { $lt: new Date(new Date().getTime() - 60 * 60 * 1000) },
-        errorCount: { $lt: _maxRetryCount },
-        isResolved: false,
-      },
-      { isResolved: true }
-    )
-  })
-}
-
-export const eventAdminInit = async ({
+export const eventStoreInit = async ({
   subjects,
   MONGO_URI,
   dbName,
@@ -59,33 +45,51 @@ export const eventAdminInit = async ({
       process.exit()
     })
 
+    const runEventArbiter = async () => {
+      const streamSummaries = await StreamSummary.find({})
+
+      await Promise.all(
+        subjects
+          .map((subject) => ({ stream: subject.split('.')[0], subject }))
+          .reduce<{ stream: string; subjects: string[] }[]>((a, c) => {
+            let index = a.findIndex((v) => v.stream === c.stream)
+            if (index >= 0) {
+              a[index].subjects.push(c.subject)
+              return a
+            } else return [...a, { stream: c.stream, subjects: [c.subject] }]
+          }, [])
+          .map(async ({ stream, subjects }) => {
+            const exists = streamSummaries.find((s) => s.stream === stream)
+            if (exists) {
+              const newSubjects = subjects.filter((subject) => !exists.subjects.includes(subject))
+              if (newSubjects.length === 0) return
+              await StreamSummary.updateOne({ stream }, { $addToSet: { subjects: { $each: newSubjects } } })
+            } else {
+              await jsm.streams.add({
+                name: stream,
+                subjects: [`${stream}.*`, `${stream}.*.*`, `${stream}.*.*.*`],
+                max_age: 6 * 60 * 60 * 1000 * 1000 * 1000,
+              })
+              await new StreamSummary({ stream, subjects }).save()
+              console.log(`New stream created: ${stream}`)
+            }
+          })
+      )
+      new CronJob('0 */15 * * * *', async () => {
+        await EventError.updateMany(
+          {
+            updatedAt: { $lt: new Date(new Date().getTime() - 60 * 60 * 1000) },
+            errorCount: { $lt: _maxRetryCount },
+            isResolved: false,
+          },
+          { isResolved: true }
+        )
+      }).start()
+    }
+
     process.on('SIGINT', () => mongoose.connection.close())
 
-    const streamSummaries = await StreamSummary.find({})
-
-    await Promise.all(
-      subjects
-        .map((subject) => ({ stream: subject.split('.')[0], subject }))
-        .reduce<{ stream: string; subjects: string[] }[]>((a, c) => {
-          let index = a.findIndex((v) => v.stream === c.stream)
-          if (index >= 0) {
-            a[index].subjects.push(c.subject)
-            return a
-          } else return [...a, { stream: c.stream, subjects: [c.subject] }]
-        }, [])
-        .map(async ({ stream, subjects }) => {
-          const exists = streamSummaries.find((s) => s.stream === stream)
-          if (exists) {
-            const newSubjects = subjects.filter((subject) => !exists.subjects.includes(subject))
-            if (newSubjects.length === 0) return
-            await StreamSummary.updateOne({ stream }, { $addToSet: { subjects: { $each: newSubjects } } })
-          } else {
-            await jsm.streams.add({ name: stream, subjects: [`${stream}.*`, `${stream}.*.*`, `${stream}.*.*.*`] })
-            await new StreamSummary({ stream, subjects }).save()
-            console.log(`New stream created: ${stream}`)
-          }
-        })
-    )
+    return { runEventArbiter }
   } catch (err) {
     console.error(err)
     throw err

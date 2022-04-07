@@ -1,29 +1,26 @@
-import { Event, Batch } from './backend/models'
+import { Event, createBatch, createEventError } from './backend/models'
 import { Types } from 'mongoose'
 import { JsMsg, JetStreamClient, StringCodec, consumerOpts } from 'nats'
 import { _maxRetryCount as maxRetryCount, _showError as showError, _showProcessTimeWarning as showProcessTimeWarning } from '.'
-import { getFail } from './subscriber'
 
 const sc = StringCodec()
 
-type BatchEventHandler<ParentEvent extends Event<string>> = (
+type BatchEventHandler<ParentEvent extends Event<string>> = ({
+  config,
+  events,
+}: {
+  config: {
+    js: JetStreamClient
+    clientGroup: string
+    parentId: Types.ObjectId
+    durableName?: string
+  }
   events: {
     input: ParentEvent['data']
-    config: {
-      js: JetStreamClient
-      clientGroup: string
-      parentId: Types.ObjectId
-      operationId: Types.ObjectId
-      subscribedTo: {
-        durableName: string
-        subject: string
-        eventHandlerOrder: number
-      }
-    }
     jsMsg: JsMsg
     fail: (error: Error) => Promise<void>
   }[]
-) => Promise<any>
+}) => Promise<any>
 
 export type SubscribeBatch = <ParentEvent extends Event<string>>({
   subject,
@@ -52,7 +49,7 @@ export const SubscriberBatch = ({
     batchEventHandlers: BatchEventHandler<ParentEvent>[]
   }) => {
     for (let i = 0; i < batchEventHandlers.length; i++) {
-      const durableName = `${clientGroup}=${subject.replace(/\./g, '-')}=${i}`
+      const durableName = `${clientGroup}=${subject.replace(/\./g, '-')}=1=${i}`
 
       try {
         let msgs: JsMsg[] = []
@@ -61,9 +58,6 @@ export const SubscriberBatch = ({
         opts.manualAck()
         opts.durable(durableName)
         opts.maxAckPending(500)
-        // opts.callback(async (err, m) => {
-        //   if (m) msgs.push(m)
-        // })
         const psub = await js.pullSubscribe(subject, opts)
 
         ;(async () => {
@@ -111,82 +105,115 @@ const processEvents = async <ParentEvent extends Event<string>>(
   showError: boolean,
   showProcessTimeWarning?: number
 ) => {
-  const _msgs = msgs
+  const failedParentIds: Types.ObjectId[] = []
+  const events = msgs
     .map((jsMsg) => {
       jsMsg.info
       const headers = jsMsg.headers
       const eventId = headers?.get('eventId')
-      const operationId = new Types.ObjectId(headers?.get('operationId'))
       const parentId = new Types.ObjectId(eventId)
       const msgData = JSON.parse(sc.decode(jsMsg.data))
       const retryingDurableName = headers?.get('retryingDurableName')
-      const fail = getFail(
+      const fail = getFail({
+        failedParentIds,
         jsMsg,
-        operationId,
         parentId,
         durableName,
         clientGroup,
         subject,
         eventHandlerOrder,
         maxRetryCount,
-        showError
-      )
-      return { jsMsg, operationId, parentId, msgData, retryingDurableName, fail }
+        showError,
+      })
+      return { jsMsg, parentId, msgData, retryingDurableName, fail }
     })
     .filter((args) => {
       if (args.retryingDurableName && args.retryingDurableName !== durableName) {
         args.jsMsg.ack()
         return false
-      } else if (args.jsMsg.info.redeliveryCount >= maxRetryCount) {
+      } else if (args.jsMsg.info.redeliveryCount > maxRetryCount) {
         args.jsMsg.ack()
         args.fail(new Error('__NO_ACK__'))
         return false
       } else return true
     })
-    .map(({ jsMsg, operationId, parentId, msgData, fail }) => {
+    .map(({ jsMsg, parentId, msgData, fail }) => {
       return {
+        parentId,
         input: msgData,
-        config: {
-          js,
-          clientGroup,
-          operationId,
-          parentId,
-          subscribedTo: {
-            durableName,
-            subject,
-            eventHandlerOrder,
-          },
-        },
         jsMsg,
         fail,
       }
     })
-  const batch = new Batch({
-    operationIds: [...new Set(_msgs.map((msg) => msg.config.operationId.toString()))],
-    parentEventIds: [...new Set(_msgs.map((msg) => msg.config.parentId.toString()))],
+  const log = createBatch({
+    parentEventIds: [...new Set(events.map((event) => event.parentId.toString()))].map((id) => new Types.ObjectId(id)),
     durableName,
     clientGroup,
     subject,
-    batchEventHandlerOrder: eventHandlerOrder,
   })
+
   try {
-    let start = new Date()
-    await batchEventHandler(_msgs)
-    let diff = new Date().getTime() - start.getTime()
+    await batchEventHandler({
+      config: {
+        js,
+        clientGroup,
+        parentId: log.batch._id,
+        durableName,
+      },
+      events,
+    })
+    let diff = new Date().getTime() - log.batch.createdAt.getTime()
     if (showProcessTimeWarning && showProcessTimeWarning < diff)
       console.log('\x1b[33m%s\x1b[0m', `[BATCH-WARNING-TIME] ${diff / 1000}s, durableName: ${durableName}`)
-    _msgs.map((msg) => msg.jsMsg.ack())
-    batch.processTime = diff
+    events.filter((e) => !failedParentIds.find((pId) => pId.toString() === e.parentId.toString())).map((msg) => msg.jsMsg.ack())
+    log.batch.processTime = diff
   } catch (error) {
-    if (error instanceof Error) {
-      batch.error = {
-        message: error.message,
-        stack: error.stack,
-        createdAt: new Date(),
-      }
-    }
+    log.catchError(error as Error)
     console.error('\x1b[31m%s\x1b[0m', `UNHANDLED SUBSCRIPTION BATCH ERRROR(${durableName})`, error)
   } finally {
-    await batch.save()
+    await log.batch.save()
   }
 }
+
+const getFail =
+  ({
+    failedParentIds,
+    jsMsg,
+    parentId,
+    durableName,
+    clientGroup,
+    subject,
+    maxRetryCount,
+    showError,
+  }: {
+    failedParentIds: Types.ObjectId[]
+    jsMsg: JsMsg
+    parentId: Types.ObjectId
+    durableName: string
+    clientGroup: string
+    subject: string
+    eventHandlerOrder: number
+    maxRetryCount: number
+    showError: boolean
+  }) =>
+  async (error: Error) => {
+    failedParentIds.push(parentId)
+    const eventError = await createEventError({
+      eventId: parentId,
+      durableName,
+      clientGroup,
+      subject,
+      error,
+    })
+
+    const { errorCount } = eventError
+    console.error(
+      '\x1b[31m%s\x1b[0m',
+      `Failed ${errorCount} times, durableName: ${durableName}, errMsg: ${error.message}, eventId:${parentId}`
+    )
+    if (showError) console.error('\x1b[31m%s\x1b[0m', `${durableName}`, error.stack)
+    if (errorCount >= maxRetryCount) {
+      console.log('\x1b[41m%s\x1b[0m', `Error added to dead letter queue`)
+      jsMsg.ack()
+    } else jsMsg.nak((errorCount - 1) * 5000)
+  }

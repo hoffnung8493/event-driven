@@ -11,12 +11,7 @@ type EventHandler<ParentEvent extends Event<string>> = (event: {
     js: JetStreamClient
     clientGroup: string
     parentId: Types.ObjectId
-    operationId: Types.ObjectId
-    subscribedTo?: {
-      durableName: string
-      subject: string
-      eventHandlerOrder: number
-    }
+    durableName?: string
   }
 }) => Promise<any>
 
@@ -39,7 +34,7 @@ export const Subscriber = ({
     eventHandlers: EventHandler<ParentEvent>[]
   }) => {
     for (let i = 0; i < eventHandlers.length; i++) {
-      const durableName = `${clientGroup}=${subject.replace(/\./g, '-')}=${i}`
+      const durableName = `${clientGroup}=${subject.replace(/\./g, '-')}=0=${i}`
       try {
         const opts = consumerOpts()
         opts.ackWait(30000)
@@ -56,7 +51,6 @@ export const Subscriber = ({
               eventHandlers[i],
               durableName,
               subject,
-              i,
               showError,
               showProcessTimeWarning
             )
@@ -84,13 +78,11 @@ const processEvent = async <ParentEvent extends Event<string>>(
   eventHandler: EventHandler<ParentEvent>,
   durableName: string,
   subject: string,
-  eventHandlerOrder: number,
   showError: boolean,
   showProcessTimeWarning?: number
 ) => {
   const headers = jsMsg.headers
   const eventId = headers?.get('eventId')
-  const operationId = new Types.ObjectId(headers?.get('operationId'))
   const parentId = new Types.ObjectId(eventId)
   const msgData = JSON.parse(sc.decode(jsMsg.data))
   const retryingDurableName = headers?.get('retryingDurableName')
@@ -98,32 +90,12 @@ const processEvent = async <ParentEvent extends Event<string>>(
     jsMsg.ack()
     return
   }
-  const fail = getFail(
-    jsMsg,
-    operationId,
-    parentId,
-    durableName,
-    clientGroup,
-    subject,
-    eventHandlerOrder,
-    maxRetryCount,
-    showError
-  )
+  const fail = getFail(jsMsg, parentId, durableName, clientGroup, subject, maxRetryCount, showError)
   try {
     let start = new Date()
     await eventHandler({
       input: msgData,
-      config: {
-        js,
-        clientGroup,
-        operationId,
-        parentId,
-        subscribedTo: {
-          durableName,
-          subject,
-          eventHandlerOrder,
-        },
-      },
+      config: { js, clientGroup, parentId, durableName },
     })
     let diff = new Date().getTime() - start.getTime()
     if (showProcessTimeWarning && showProcessTimeWarning < diff)
@@ -134,37 +106,33 @@ const processEvent = async <ParentEvent extends Event<string>>(
   }
 }
 
-export const getFail =
+const getFail =
   (
     jsMsg: JsMsg,
-    operationId: Types.ObjectId,
     parentId: Types.ObjectId,
     durableName: string,
     clientGroup: string,
     subject: string,
-    eventHandlerOrder: number,
     maxRetryCount: number,
     showError: boolean
   ) =>
   async (error: Error) => {
     const eventError = await createEventError({
-      operationId,
-      parentId,
+      eventId: parentId,
       durableName,
       clientGroup,
       subject,
-      eventHandlerOrder,
       error,
     })
 
-    if (showError) console.error('\x1b[31m%s\x1b[0m', `${durableName}`, error)
     const { errorCount } = eventError
     console.error(
       '\x1b[31m%s\x1b[0m',
       `Failed ${errorCount} times, durableName: ${durableName}, errMsg: ${error.message}, eventId:${parentId}`
     )
+    if (showError) console.error('\x1b[31m%s\x1b[0m', `${durableName}`, error.stack)
     if (errorCount >= maxRetryCount) {
-      console.log('\x1b[41m%s\x1b[0m', `Error added to dead letter queue`)
+      console.error('\x1b[41m%s\x1b[0m', `Error added to dead letter queue`)
       jsMsg.ack()
     } else jsMsg.nak((errorCount - 1) * 5000)
   }
