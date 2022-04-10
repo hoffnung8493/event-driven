@@ -106,7 +106,15 @@ const processEvents = async <ParentEvent extends Event<string>>(
   showProcessTimeWarning?: number
 ) => {
   const failedParentIds: Types.ObjectId[] = []
-  const events = msgs
+  const uniqueSeqs = [...new Set(msgs.map((msg) => msg.seq))]
+  if (uniqueSeqs.length !== msgs.length) console.error(`duplicated seq!, ${msgs.map((msg) => msg.seq)}`)
+
+  const events = uniqueSeqs
+    .map((seq) => {
+      const msg = msgs.find((msg) => msg.seq === seq)
+      if (!msg) throw new Error('Something went wrong! cant find msg')
+      return msg
+    })
     .map((jsMsg) => {
       jsMsg.info
       const headers = jsMsg.headers

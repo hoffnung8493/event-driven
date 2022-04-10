@@ -44,7 +44,7 @@ For now here is a full [boilerplate](https://github.com/hoffnung8493/event-drive
 - Apply TTL to event data in event store(mongodb), to keep the storage size in a reasonable size.
 - Able to replay/query "all" events. Use MongoDB Data Lake to replay/query from "all" events
 - Dashboard - full event chain visualization summary for each "subject"
-- Event Version Control
+- [Event Version Control](https://stackoverflow.com/questions/48564741/event-sourcing-handle-event-schema-changing)
   - Each event should store a version number
   - When version is upgraded, provide a function that updates old event data to the newest version
 - Able to smoothly split a single module into multiple modules

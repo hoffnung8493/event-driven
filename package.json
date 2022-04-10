@@ -1,6 +1,6 @@
 {
   "name": "event-driven",
-  "version": "1.0.38",
+  "version": "1.0.40",
   "description": "makes building event-driven-architecture easy",
   "main": "build/index.js",
   "types": "build/index.d.ts",
