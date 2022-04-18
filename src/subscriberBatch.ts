@@ -35,11 +35,13 @@ export const SubscriberBatch = ({
   js,
   batch,
   expires,
+  interval,
 }: {
   clientGroup: string
   js: JetStreamClient
   batch: number
   expires: number
+  interval: number
 }): SubscribeBatch => {
   return async <ParentEvent extends Event<string>>({
     subject,
@@ -84,7 +86,7 @@ export const SubscriberBatch = ({
         psub.pull({ batch, expires })
         setInterval(() => {
           psub.pull({ batch, expires })
-        }, expires + 1000)
+        }, interval)
       } catch (err) {
         console.error(`clientGroup: ${clientGroup}, index: ${i}, subject: ${subject}`)
         throw err
@@ -94,7 +96,7 @@ export const SubscriberBatch = ({
 }
 
 const processEvents = async <ParentEvent extends Event<string>>(
-  msgs: JsMsg[],
+  _msgs: JsMsg[],
   maxRetryCount: number,
   js: JetStreamClient,
   clientGroup: string,
@@ -105,16 +107,10 @@ const processEvents = async <ParentEvent extends Event<string>>(
   showError: boolean,
   showProcessTimeWarning?: number
 ) => {
+  const msgs = [..._msgs]
   const failedParentIds: Types.ObjectId[] = []
-  const uniqueSeqs = [...new Set(msgs.map((msg) => msg.seq))]
-  if (uniqueSeqs.length !== msgs.length) console.error(`duplicated seq!, ${msgs.map((msg) => msg.seq)}`)
 
-  const events = uniqueSeqs
-    .map((seq) => {
-      const msg = msgs.find((msg) => msg.seq === seq)
-      if (!msg) throw new Error('Something went wrong! cant find msg')
-      return msg
-    })
+  const events = msgs
     .map((jsMsg) => {
       jsMsg.info
       const headers = jsMsg.headers

@@ -20,11 +20,13 @@ export const Subscriber = ({
   js,
   batch,
   expires,
+  interval,
 }: {
   clientGroup: string
   js: JetStreamClient
   batch: number
   expires: number
+  interval: number
 }) => {
   return async <ParentEvent extends Event<string>>({
     subject,
@@ -41,9 +43,12 @@ export const Subscriber = ({
         opts.manualAck()
         opts.durable(durableName)
         opts.maxAckPending(500)
-        opts.callback(async (err, m) => {
-          if (m)
-            await processEvent(
+
+        const psub = await js.pullSubscribe(subject, opts)
+
+        ;(async () => {
+          for await (const m of psub)
+            processEvent(
               m,
               maxRetryCount,
               js,
@@ -54,14 +59,12 @@ export const Subscriber = ({
               showError,
               showProcessTimeWarning
             )
-        })
-
-        const psub = await js.pullSubscribe(subject, opts)
+        })()
 
         psub.pull({ batch, expires })
         setInterval(() => {
           psub.pull({ batch, expires })
-        }, expires + 1000)
+        }, interval)
       } catch (err) {
         console.error(`clientGroup: ${clientGroup}, index: ${i}, subject: ${subject}`)
         throw err
