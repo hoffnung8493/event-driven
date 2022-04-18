@@ -35,13 +35,11 @@ export const SubscriberBatch = ({
   js,
   batch,
   expires,
-  interval,
 }: {
   clientGroup: string
   js: JetStreamClient
   batch: number
   expires: number
-  interval: number
 }): SubscribeBatch => {
   return async <ParentEvent extends Event<string>>({
     subject,
@@ -86,7 +84,7 @@ export const SubscriberBatch = ({
         psub.pull({ batch, expires })
         setInterval(() => {
           psub.pull({ batch, expires })
-        }, interval)
+        }, expires)
       } catch (err) {
         console.error(`clientGroup: ${clientGroup}, index: ${i}, subject: ${subject}`)
         throw err
