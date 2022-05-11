@@ -28,8 +28,8 @@ export const Publisher = <T extends Event<string>>({
 }) => {
   return (data: T['data'], uniqueId?: string) =>
     new Promise(async (resolve, reject) => {
+      const { parentId, clientGroup, durableName } = config
       try {
-        const { parentId, clientGroup, durableName } = config
         const event = createEvent<T>({
           parentId,
           durableName,
@@ -46,7 +46,7 @@ export const Publisher = <T extends Event<string>>({
         if (showeEventPublishes) console.log(`Event! - [${subject}]`)
         resolve({ eventId })
       } catch (err) {
-        console.error(err)
+        console.error('###PUBLISHER ERROR###', err, parentId, clientGroup, durableName, data)
         reject(err)
       }
     })

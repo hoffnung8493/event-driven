@@ -2,24 +2,22 @@ import { Event, createBatch, createEventError } from './backend/models'
 import { Types } from 'mongoose'
 import { JsMsg, JetStreamClient, StringCodec, consumerOpts } from 'nats'
 import { _maxRetryCount as maxRetryCount, _showError as showError, _showProcessTimeWarning as showProcessTimeWarning } from '.'
+import { EventConfig } from './subscriber'
 
 const sc = StringCodec()
 
-type BatchEventHandler<ParentEvent extends Event<string>> = ({
+export interface BatchSubscriberEvent<ParentEvent extends Event<string>> {
+  input: ParentEvent['data']
+  jsMsg: JsMsg
+  fail: (error: Error) => Promise<void>
+}
+
+export type BatchEventHandler<ParentEvent extends Event<string>> = ({
   config,
   events,
 }: {
-  config: {
-    js: JetStreamClient
-    clientGroup: string
-    parentId: Types.ObjectId
-    durableName?: string
-  }
-  events: {
-    input: ParentEvent['data']
-    jsMsg: JsMsg
-    fail: (error: Error) => Promise<void>
-  }[]
+  config: EventConfig
+  events: BatchSubscriberEvent<ParentEvent>[]
 }) => Promise<any>
 
 export type SubscribeBatch = <ParentEvent extends Event<string>>({

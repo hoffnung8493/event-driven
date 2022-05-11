@@ -5,14 +5,16 @@ import { _maxRetryCount as maxRetryCount, _showError as showError, _showProcessT
 
 const sc = StringCodec()
 
+export interface EventConfig {
+  js: JetStreamClient
+  clientGroup: string
+  parentId: Types.ObjectId
+  durableName?: string
+}
+
 type EventHandler<ParentEvent extends Event<string>> = (event: {
   input: ParentEvent['data']
-  config: {
-    js: JetStreamClient
-    clientGroup: string
-    parentId: Types.ObjectId
-    durableName?: string
-  }
+  config: EventConfig
 }) => Promise<any>
 
 export const Subscriber = ({
@@ -64,7 +66,8 @@ export const Subscriber = ({
           psub.pull({ batch, expires })
         }, expires)
       } catch (err) {
-        console.error(`clientGroup: ${clientGroup}, index: ${i}, subject: ${subject}`)
+        //@ts-ignore
+        console.error(err.message, `clientGroup: ${clientGroup}, index: ${i}, subject: ${subject}`)
         throw err
       }
     }
