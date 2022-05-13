@@ -14,18 +14,14 @@ export interface PublisherInput {
   }
 }
 
-export const Publisher = <T extends Event<string>>({
-  config,
-  subject,
-}: {
-  config: {
-    js: JetStreamClient
-    clientGroup: string
-    parentId: Types.ObjectId
-    durableName?: string
-  }
-  subject: T['subject']
-}) => {
+export interface PublisherConfig {
+  js: JetStreamClient
+  clientGroup: string
+  parentId: Types.ObjectId
+  durableName?: string
+}
+
+export const Publisher = <T extends Event<string>>({ config, subject }: { config: PublisherConfig; subject: T['subject'] }) => {
   return (data: T['data'], uniqueId?: string) =>
     new Promise(async (resolve, reject) => {
       const { parentId, clientGroup, durableName } = config
