@@ -12,13 +12,3 @@ export interface TriggerError extends Document {
 const TriggerErrorSchema = new Schema({}, { timestamps: true, strict: false })
 
 export const TriggerError = model<TriggerError>('TriggerError', TriggerErrorSchema)
-
-export const catchTriggerError = (triggerId: Types.ObjectId) => (error: Error) => {
-  new TriggerError({
-    triggerId,
-    message: error.message ? JSON.stringify(error.message) : undefined,
-    stack: error.stack ? JSON.stringify(error.stack) : undefined,
-    isConfirmed: false,
-  }).save()
-  return
-}

@@ -1,9 +1,11 @@
 export * from './publisher'
 export * from './subscriber'
+export * from './subscribers'
+import { __NO_ACK__ } from './backend'
 export * from './subscriberBatch'
 export * from './backend'
 import { ObjectId } from 'mongodb'
-import { StreamSummary, EventError, Log, TriggerError } from './backend/models'
+import { StreamSummary, EventError, Event, TriggerError, SubscriptionError } from './backend/models'
 import mongoose from 'mongoose'
 import { JetStreamManager } from 'nats'
 export let _showError = false
@@ -11,7 +13,6 @@ export let _showProcessTimeWarning: number | undefined
 export let _showEventPublishes = false
 export let _maxRetryCount = 5
 import { CronJob } from 'cron'
-import { BatchError } from './backend/models/BatchError'
 
 export const eventStoreInit = async ({
   subjects,
@@ -86,16 +87,25 @@ export const eventStoreInit = async ({
       )
       new CronJob('0 0 */1 * * *', async () => {
         const _id = ObjectId.createFromTime(Math.floor(new Date().getTime() / 1000) - maxLogAgeSecs)
-        await Log.deleteMany({ _id: { $lt: _id } })
+        await Event.deleteMany({ _id: { $lt: _id } })
         await TriggerError.deleteMany({ _id: { $lt: _id } })
         await EventError.deleteMany({ _id: { $lt: _id } })
-        await BatchError.deleteMany({ _id: { $lt: _id } })
+        await SubscriptionError.deleteMany({ _id: { $lt: _id } })
       }).start()
       new CronJob('0 */15 * * * *', async () => {
         await EventError.updateMany(
           {
             updatedAt: { $lt: new Date(new Date().getTime() - 60 * 60 * 1000) },
             errorCount: { $lt: _maxRetryCount },
+            isResolved: false,
+          },
+          { isResolved: true }
+        )
+        await SubscriptionError.updateMany(
+          {
+            updatedAt: { $lt: new Date(new Date().getTime() - 60 * 60 * 1000) },
+            errorCount: { $lt: _maxRetryCount },
+            'error.message': { $ne: __NO_ACK__ },
             isResolved: false,
           },
           { isResolved: true }

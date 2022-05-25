@@ -9,7 +9,7 @@ export interface PublisherInput {
   config: {
     js: JetStreamClient
     clientGroup: string
-    parentId: Types.ObjectId
+    parentIds: Types.ObjectId[]
     durableName?: string
   }
 }
@@ -17,17 +17,17 @@ export interface PublisherInput {
 export interface PublisherConfig {
   js: JetStreamClient
   clientGroup: string
-  parentId: Types.ObjectId
+  parentIds: Types.ObjectId[]
   durableName?: string
 }
 
 export const Publisher = <T extends Event<string>>({ config, subject }: { config: PublisherConfig; subject: T['subject'] }) => {
   return (data: T['data'], uniqueId?: string) =>
     new Promise(async (resolve, reject) => {
-      const { parentId, clientGroup, durableName } = config
+      const { parentIds, clientGroup, durableName } = config
       try {
         const event = createEvent<T>({
-          parentId,
+          parentIds,
           durableName,
           clientGroup,
           subject,
@@ -42,7 +42,7 @@ export const Publisher = <T extends Event<string>>({ config, subject }: { config
         if (showeEventPublishes) console.log(`Event! - [${subject}]`)
         resolve({ eventId })
       } catch (err) {
-        console.error('###PUBLISHER ERROR###', err, parentId, clientGroup, durableName, data)
+        console.error('###PUBLISHER ERROR###', err, parentIds, clientGroup, durableName, data)
         reject(err)
       }
     })

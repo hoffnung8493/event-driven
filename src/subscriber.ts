@@ -62,9 +62,11 @@ export const Subscriber = ({
         })()
 
         psub.pull({ batch, expires })
-        setInterval(() => {
-          psub.pull({ batch, expires })
-        }, expires)
+        setTimeout(() => {
+          setInterval(() => {
+            psub.pull({ batch, expires })
+          }, expires)
+        }, Math.random() * expires)
       } catch (err) {
         //@ts-ignore
         console.error(err.message, `clientGroup: ${clientGroup}, index: ${i}, subject: ${subject}`)
