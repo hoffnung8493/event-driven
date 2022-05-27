@@ -1,27 +1,15 @@
 import { Types } from 'mongoose'
 import { createEvent, Event } from './backend/models'
 import { JetStreamClient, StringCodec, headers } from 'nats'
-import { _showEventPublishes as showeEventPublishes } from './index'
+import { _showEventPublishes as showeEventPublishes, EventConfig } from './index'
 
 const sc = StringCodec()
 
 export interface PublisherInput {
-  config: {
-    js: JetStreamClient
-    clientGroup: string
-    parentIds: Types.ObjectId[]
-    durableName?: string
-  }
+  config: EventConfig
 }
 
-export interface PublisherConfig {
-  js: JetStreamClient
-  clientGroup: string
-  parentIds: Types.ObjectId[]
-  durableName?: string
-}
-
-export const Publisher = <T extends Event<string>>({ config, subject }: { config: PublisherConfig; subject: T['subject'] }) => {
+export const Publisher = <T extends Event<string>>({ config, subject }: { config: EventConfig; subject: T['subject'] }) => {
   return (data: T['data'], uniqueId?: string) =>
     new Promise(async (resolve, reject) => {
       const { parentIds, clientGroup, durableName } = config

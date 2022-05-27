@@ -1,10 +1,11 @@
 import { JetStreamClient, JsMsg, StringCodec } from 'nats'
 import { Types } from 'mongoose'
 import { Event, getFail, __NO_ACK__ } from '../backend'
+import { durableNames } from '..'
 
-export interface EventConfig2 {
-  js: JetStreamClient
+export interface EventConfig {
   clientGroup: string
+  js: JetStreamClient
   parentIds: Types.ObjectId[]
   durableName?: string
 }
@@ -23,6 +24,15 @@ interface ConvertedMsg<ParentEvent extends Event<string>> {
   msgData: ParentEvent['data']
   retryingDurableName: string | undefined
   //   fail: (error: Error) => Promise<void>
+}
+
+export const getDurableName = (clientGroup: string, subject: string, i: number, type: 'PULL' | 'GROUP') => {
+  const durableName = `${clientGroup}=${subject.replace(/\./g, '-')}=${type}=${i}`
+  const exists = durableNames.find((name) => name === durableName)
+  if (exists)
+    throw new Error(`Duplicate Subscription on same clientGroup(${clientGroup}) & subject(${subject}) & type(${type}) pair`)
+  else durableNames.push(durableName)
+  return durableName
 }
 
 export const convertJsMsg = <ParentEvent extends Event<string>>(jsMsg: JsMsg): ConvertedMsg<ParentEvent> => {
@@ -74,3 +84,45 @@ export const groupByFn = <T, K extends keyof any>(list: T[], getKey: (item: T) =
       return previous
     }, {} as Record<K, T[]>)
   )
+
+export interface SubscriberEvent<ParentEvent extends Event<string>> {
+  input: ParentEvent['data']
+  ack: () => void
+  fail: (error: Error) => Promise<void>
+  config: EventConfig
+}
+
+export interface SubscriberGroupedEvent<ParentEvent extends Event<string>> {
+  inputs: ParentEvent['data'][]
+  ack: () => void
+  fail: (error: Error) => Promise<void>
+  config: EventConfig
+}
+
+export const autoAckOrFail =
+  <T extends SubscriberEvent<Event<string>>>(fn: (args: { config: EventConfig; input: T['input'] }) => any) =>
+  (events: T[]) =>
+    Promise.all(
+      events.map(async (event) => {
+        try {
+          await fn(event)
+          event.ack()
+        } catch (err) {
+          event.fail(err as Error)
+        }
+      })
+    )
+
+export const autoGroupAckOrFail =
+  <T extends SubscriberGroupedEvent<Event<string>>>(fn: (args: { config: EventConfig; inputs: T['inputs'] }) => any) =>
+  (events: T[]) =>
+    Promise.all(
+      events.map(async (event) => {
+        try {
+          await fn(event)
+          event.ack()
+        } catch (err) {
+          event.fail(err as Error)
+        }
+      })
+    )

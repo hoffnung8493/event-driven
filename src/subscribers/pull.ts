@@ -1,36 +1,42 @@
 import { Event, getFail } from '../backend'
 import { JsMsg, JetStreamClient, consumerOpts } from 'nats'
 import { _maxRetryCount as maxRetryCount, _showError as showError, _showProcessTimeWarning as showProcessTimeWarning } from '../'
-import { SubscriberConfig, EventConfig2, convertJsMsg, filterConvertedMsgs } from './common'
+import { SubscriberConfig, SubscriberEvent, convertJsMsg, filterConvertedMsgs, getDurableName } from './common'
 
-export interface SubscriberEvent<ParentEvent extends Event<string>> {
-  input: ParentEvent['data']
-  ack: () => void
-  fail: (error: Error) => Promise<void>
-  config: EventConfig2
+export type PulledEventHandler<ParentEvent extends Event<string>> = (events: SubscriberEvent<ParentEvent>[]) => Promise<any>
+
+const getSubsDetails = <ParentEvent extends Event<string>>(
+  subscription:
+    | PulledEventHandler<ParentEvent>
+    | [
+        PulledEventHandler<ParentEvent>,
+        {
+          batch?: number | undefined
+          expires?: number | undefined
+        }
+      ]
+) => {
+  if (typeof subscription === 'function') {
+    const eventHandler = subscription
+    return { eventHandler, batchCustom: undefined, expiresCustom: undefined }
+  } else {
+    const [eventHandler, { batch: batchCustom, expires: expiresCustom }] = subscription
+    return { eventHandler, batchCustom, expiresCustom }
+  }
 }
-
-export type PulledEventHandler<ParentEvent extends Event<string>> = ({
-  events,
-}: {
-  events: SubscriberEvent<ParentEvent>[]
-}) => Promise<any>
 
 export const SubscriberPull = (config: SubscriberConfig) => {
   return async <ParentEvent extends Event<string>>({
     subject,
-    pulledEventHandlerGroups,
+    subscriptions,
   }: {
     subject: ParentEvent['subject']
-    pulledEventHandlerGroups: {
-      pullEventHandler: PulledEventHandler<ParentEvent>
-      batch?: number
-      expires?: number
-    }[]
+    subscriptions: (PulledEventHandler<ParentEvent> | [PulledEventHandler<ParentEvent>, { batch?: number; expires?: number }])[]
   }) => {
-    for (let i = 0; i < pulledEventHandlerGroups.length; i++) {
-      const { pullEventHandler, batch: batchCustom, expires: expiresCustom } = pulledEventHandlerGroups[i]
-      const durableName = `${config.clientGroup}=${subject.replace(/\./g, '-')}=PULL=${i}`
+    for (let i = 0; i < subscriptions.length; i++) {
+      const subscription = subscriptions[i]
+      const { eventHandler, batchCustom, expiresCustom } = getSubsDetails(subscription)
+      const durableName = getDurableName(config.clientGroup, subject, i, 'PULL')
 
       try {
         let msgs: JsMsg[] = []
@@ -51,7 +57,7 @@ export const SubscriberPull = (config: SubscriberConfig) => {
               maxRetryCount,
               js: config.js,
               clientGroup: config.clientGroup,
-              pullEventHandler,
+              eventHandler,
               durableName,
               subject,
               eventHandlerOrder: i,
@@ -78,7 +84,7 @@ interface ProcessEventsInput<ParentEvent extends Event<string>> {
   maxRetryCount: number
   js: JetStreamClient
   clientGroup: string
-  pullEventHandler: PulledEventHandler<ParentEvent>
+  eventHandler: PulledEventHandler<ParentEvent>
   durableName: string
   subject: string
   eventHandlerOrder: number
@@ -91,7 +97,7 @@ const processEvents = async <ParentEvent extends Event<string>>({
   maxRetryCount,
   js,
   clientGroup,
-  pullEventHandler,
+  eventHandler,
   durableName,
   subject,
   eventHandlerOrder,
@@ -127,7 +133,7 @@ const processEvents = async <ParentEvent extends Event<string>>({
 
   try {
     let start = new Date()
-    await pullEventHandler({ events })
+    await eventHandler(events)
     let diff = new Date().getTime() - start.getTime()
     //TODO sstore process time
     if (showProcessTimeWarning && showProcessTimeWarning < diff)

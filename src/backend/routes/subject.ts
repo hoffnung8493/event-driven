@@ -1,5 +1,5 @@
 import express from 'express'
-import { Log, EventError, EventSummary } from '../models'
+import { EventError, EventSummary } from '../models'
 import { Types } from 'mongoose'
 import { JetStreamClient } from 'nats'
 
@@ -25,11 +25,12 @@ export const subjectRouter = (js: JetStreamClient) => {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 20
       const cursor = req.query.cursor ? new Types.ObjectId(req.query.offset as string) : new Types.ObjectId()
       const query = { subject, createdAt: { $gte: new Date(sDate), $lte: new Date(eDate) }, _id: { $lt: cursor } }
-      const [events, count] = await Promise.all([
-        Log.find(query).sort({ _id: -1 }).limit(limit),
-        Log.find(query).countDocuments(),
-      ])
-      res.json({ events, count })
+      // const [events, count] = await Promise.all([
+      //   Log.find(query).sort({ _id: -1 }).limit(limit),
+      //   Log.find(query).countDocuments(),
+      // ])
+      // res.json({ events, count })
+      res.json({})
     } catch (err) {
       if (err instanceof Error) res.status(500).json(err.message)
       else res.status(500).json('something went wrong')

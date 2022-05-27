@@ -1,37 +1,55 @@
 import { Event, getFail } from '../backend'
 import { JsMsg, JetStreamClient, consumerOpts } from 'nats'
 import { _maxRetryCount as maxRetryCount, _showError as showError, _showProcessTimeWarning as showProcessTimeWarning } from '..'
-import { SubscriberConfig, EventConfig2, convertJsMsg, filterConvertedMsgs, groupByFn } from './common'
+import { SubscriberConfig, SubscriberGroupedEvent, convertJsMsg, filterConvertedMsgs, groupByFn, getDurableName } from './common'
 
-export interface SubscriberGroupedEvent<ParentEvent extends Event<string>> {
-  inputs: ParentEvent['data'][]
-  ack: () => void
-  fail: (error: Error) => Promise<void>
-  config: EventConfig2
-}
-
-export type PullGroupedEventHandler<ParentEvent extends Event<string>> = ({
-  groupedEvents,
-}: {
+export type PullGroupedEventHandler<ParentEvent extends Event<string>> = (
   groupedEvents: SubscriberGroupedEvent<ParentEvent>[]
-}) => Promise<any>
+) => Promise<any>
+
+const getSubsDetails = <ParentEvent extends Event<string>>(
+  subscription:
+    | PullGroupedEventHandler<ParentEvent>
+    | [
+        PullGroupedEventHandler<ParentEvent>,
+        {
+          groupBy?: (item: ParentEvent['data']) => string | number | symbol
+          batch?: number | undefined
+          expires?: number | undefined
+        }
+      ]
+) => {
+  if (typeof subscription === 'function') {
+    const eventHandler = subscription
+    return { eventHandler, batchCustom: undefined, expiresCustom: undefined, groupBy: undefined }
+  } else {
+    const [eventHandler, { batch: batchCustom, expires: expiresCustom, groupBy }] = subscription
+    return { eventHandler, batchCustom, expiresCustom, groupBy }
+  }
+}
 
 export const SubscriberPullGroup = (config: SubscriberConfig) => {
   return async <ParentEvent extends Event<string>>({
     subject,
-    batchEventHandlerGroups,
+    subscriptions,
   }: {
     subject: ParentEvent['subject']
-    batchEventHandlerGroups: {
-      groupBy: (item: ParentEvent['data']) => string | number | symbol
-      pullGroupEventHandler: PullGroupedEventHandler<ParentEvent>
-      batch?: number
-      expires?: number
-    }[]
+    subscriptions: (
+      | PullGroupedEventHandler<ParentEvent>
+      | [
+          PullGroupedEventHandler<ParentEvent>,
+          {
+            groupBy?: (item: ParentEvent['data']) => string | number | symbol
+            batch?: number
+            expires?: number
+          }
+        ]
+    )[]
   }) => {
-    for (let i = 0; i < batchEventHandlerGroups.length; i++) {
-      const { pullGroupEventHandler, groupBy, batch: batchCustom, expires: expiresCustom } = batchEventHandlerGroups[i]
-      const durableName = `${config.clientGroup}=${subject.replace(/\./g, '-')}=GROUP=${i}`
+    for (let i = 0; i < subscriptions.length; i++) {
+      const subscription = subscriptions[i]
+      const { eventHandler, groupBy, batchCustom, expiresCustom } = getSubsDetails(subscription)
+      const durableName = getDurableName(config.clientGroup, subject, i, 'GROUP')
 
       try {
         let msgs: JsMsg[] = []
@@ -52,12 +70,13 @@ export const SubscriberPullGroup = (config: SubscriberConfig) => {
               maxRetryCount,
               js: config.js,
               clientGroup: config.clientGroup,
-              pullGroupEventHandler,
+              eventHandler,
               durableName,
               subject,
               eventHandlerOrder: i,
               showError,
-              groupBy,
+              //if no groupBy condition is provided group all events
+              groupBy: groupBy ?? (() => 1),
               showProcessTimeWarning,
             })
           }
@@ -81,7 +100,7 @@ interface ProcessEventsInput<ParentEvent extends Event<string>> {
   maxRetryCount: number
   js: JetStreamClient
   clientGroup: string
-  pullGroupEventHandler: PullGroupedEventHandler<ParentEvent>
+  eventHandler: PullGroupedEventHandler<ParentEvent>
   durableName: string
   subject: string
   eventHandlerOrder: number
@@ -95,7 +114,7 @@ const processEvents = async <ParentEvent extends Event<string>>({
   maxRetryCount,
   js,
   clientGroup,
-  pullGroupEventHandler,
+  eventHandler,
   durableName,
   subject,
   eventHandlerOrder,
@@ -136,7 +155,7 @@ const processEvents = async <ParentEvent extends Event<string>>({
 
   try {
     let start = new Date()
-    await pullGroupEventHandler({ groupedEvents })
+    await eventHandler(groupedEvents)
     let diff = new Date().getTime() - start.getTime()
     //TODO sstore process time
     if (showProcessTimeWarning && showProcessTimeWarning < diff)

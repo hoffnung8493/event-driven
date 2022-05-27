@@ -1,8 +1,6 @@
 export * from './publisher'
-export * from './subscriber'
 export * from './subscribers'
 import { __NO_ACK__ } from './backend'
-export * from './subscriberBatch'
 export * from './backend'
 import { ObjectId } from 'mongodb'
 import { StreamSummary, EventError, Event, TriggerError, SubscriptionError } from './backend/models'
@@ -13,6 +11,8 @@ export let _showProcessTimeWarning: number | undefined
 export let _showEventPublishes = false
 export let _maxRetryCount = 5
 import { CronJob } from 'cron'
+
+export const durableNames: string[] = []
 
 export const eventStoreInit = async ({
   subjects,
