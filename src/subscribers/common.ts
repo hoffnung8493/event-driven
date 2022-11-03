@@ -61,8 +61,8 @@ export const filterConvertedMsgs =
       return false
     } else if (args.jsMsg.info.redeliveryCount > maxRetryCount) {
       getFail({
-        ack: args.jsMsg.ack,
-        nak: args.jsMsg.nak,
+        ack: () => args.jsMsg.ack(),
+        nak: (delay: number) => args.jsMsg.nak(delay),
         parentIds: [args.parentId],
         durableName,
         clientGroup,
@@ -71,6 +71,7 @@ export const filterConvertedMsgs =
         maxRetryCount,
         showError,
       })(new Error(__NO_ACK__))
+
       return false
     } else return true
   }

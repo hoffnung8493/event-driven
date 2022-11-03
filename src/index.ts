@@ -64,7 +64,7 @@ export const eventStoreInit = async ({
             } else return [...a, { stream: c.stream, subjects: [c.subject] }]
           }, [])
           .map(async ({ stream, subjects }) => {
-            if (!streams.find((s) => s.config.name)) {
+            if (!streams.find((s) => s.config.name === stream)) {
               await jsm.streams.add({
                 name: stream,
                 subjects: [`${stream}.*`, `${stream}.*.*`, `${stream}.*.*.*`],

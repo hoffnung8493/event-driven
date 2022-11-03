@@ -31,6 +31,6 @@ export const createEvent = <PublishingEvent extends Event<string>>(data: {
   data: PublishingEvent['data']
 }) => {
   const event = new Event({ ...data, republish: [], createdAt: new Date() })
-  event.save().catch(console.log)
+  // event.save().catch(console.log)
   return event
 }

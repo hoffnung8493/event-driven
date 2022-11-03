@@ -110,8 +110,8 @@ const processEvents = async <ParentEvent extends Event<string>>({
     .filter(msgFilter)
     .map(({ jsMsg, parentId, msgData }) => {
       const parentIds = [parentId]
-      const ack = jsMsg.ack
-      const nak = jsMsg.nak
+      const ack = () => jsMsg.ack()
+      const nak = (delay: number) => jsMsg.nak(delay)
       const fail = getFail({
         parentIds,
         ack,

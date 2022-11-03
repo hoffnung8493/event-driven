@@ -22,7 +22,7 @@ export interface TriggerInput {
 }
 export const createTrigger = (data: TriggerInput) => {
   const trigger = new Trigger({ ...data, createdAt: new Date() })
-  trigger.save().catch(console.log)
+  // trigger.save().catch(console.log)
   return {
     trigger,
     catchTriggerError: catchTriggerError(trigger._id),
